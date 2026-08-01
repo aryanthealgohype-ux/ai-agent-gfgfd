@@ -528,16 +528,25 @@ export type Database = {
       }
       org_settings: {
         Row: {
+          archive_logs: boolean
+          last_retention_run_at: string | null
+          log_retention_days: number
           org_id: string
           placeholders: Json
           updated_at: string
         }
         Insert: {
+          archive_logs?: boolean
+          last_retention_run_at?: string | null
+          log_retention_days?: number
           org_id: string
           placeholders?: Json
           updated_at?: string
         }
         Update: {
+          archive_logs?: boolean
+          last_retention_run_at?: string | null
+          log_retention_days?: number
           org_id?: string
           placeholders?: Json
           updated_at?: string
@@ -606,6 +615,44 @@ export type Database = {
         }
         Relationships: []
       }
+      run_log_archive: {
+        Row: {
+          archived_at: string
+          id: string
+          level: string
+          logged_at: string
+          message: string
+          org_id: string
+          run_id: string | null
+        }
+        Insert: {
+          archived_at?: string
+          id?: string
+          level?: string
+          logged_at: string
+          message: string
+          org_id: string
+          run_id?: string | null
+        }
+        Update: {
+          archived_at?: string
+          id?: string
+          level?: string
+          logged_at?: string
+          message?: string
+          org_id?: string
+          run_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "run_log_archive_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       run_logs: {
         Row: {
           created_at: string
@@ -648,6 +695,121 @@ export type Database = {
           },
         ]
       }
+      spend_alerts: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          limit_id: string | null
+          limit_usd: number
+          org_id: string
+          period: Database["public"]["Enums"]["spend_period"]
+          spend_usd: number
+          window_start: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          limit_id?: string | null
+          limit_usd?: number
+          org_id: string
+          period: Database["public"]["Enums"]["spend_period"]
+          spend_usd?: number
+          window_start: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          limit_id?: string | null
+          limit_usd?: number
+          org_id?: string
+          period?: Database["public"]["Enums"]["spend_period"]
+          spend_usd?: number
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spend_alerts_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spend_alerts_limit_id_fkey"
+            columns: ["limit_id"]
+            isOneToOne: false
+            referencedRelation: "spend_limits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spend_alerts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spend_limits: {
+        Row: {
+          agent_id: string | null
+          alert_threshold_pct: number
+          created_at: string
+          created_by: string | null
+          hard_stop: boolean
+          id: string
+          limit_usd: number
+          org_id: string
+          period: Database["public"]["Enums"]["spend_period"]
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          alert_threshold_pct?: number
+          created_at?: string
+          created_by?: string | null
+          hard_stop?: boolean
+          id?: string
+          limit_usd: number
+          org_id: string
+          period: Database["public"]["Enums"]["spend_period"]
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          alert_threshold_pct?: number
+          created_at?: string
+          created_by?: string | null
+          hard_stop?: boolean
+          id?: string
+          limit_usd?: number
+          org_id?: string
+          period?: Database["public"]["Enums"]["spend_period"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spend_limits_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spend_limits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -680,11 +842,91 @@ export type Database = {
           },
         ]
       }
+      webhook_deliveries: {
+        Row: {
+          agent_id: string | null
+          attempts: number
+          created_at: string
+          delivered_at: string | null
+          event: string
+          id: string
+          last_error: string | null
+          last_status_code: number | null
+          max_attempts: number
+          next_attempt_at: string
+          org_id: string
+          payload: Json
+          run_id: string | null
+          status: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          agent_id?: string | null
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          event?: string
+          id?: string
+          last_error?: string | null
+          last_status_code?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          org_id: string
+          payload?: Json
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          agent_id?: string | null
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          event?: string
+          id?: string
+          last_error?: string | null
+          last_status_code?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          org_id?: string
+          payload?: Json
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      apply_log_retention: { Args: never; Returns: number }
       can_manage: { Args: { _org_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -715,6 +957,7 @@ export type Database = {
         | "succeeded"
         | "failed"
         | "rejected"
+      spend_period: "daily" | "monthly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -862,6 +1105,7 @@ export const Constants = {
         "failed",
         "rejected",
       ],
+      spend_period: ["daily", "monthly"],
     },
   },
 } as const
