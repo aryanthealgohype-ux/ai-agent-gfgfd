@@ -398,7 +398,7 @@ export const getRetentionPreview = createServerFn({ method: "GET" })
 
     const { data: preview, error } = await context.supabase.rpc("retention_preview", {
       _org_id: workspace.org_id,
-      _days: data.days ?? null,
+      _days: data.days ?? (null as unknown as number),
     });
     if (error) throw new Error(error.message);
 
