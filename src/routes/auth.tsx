@@ -22,9 +22,10 @@ function safePath(value: unknown): string | undefined {
 }
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    next: safePath(search["next"]),
-  }),
+  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+    const next = safePath(search["next"]);
+    return next ? { next } : {};
+  },
   head: () => ({
     meta: [
       { title: "Sign in | AI Operating System" },
