@@ -6,6 +6,7 @@ import { listRuns } from "@/lib/fleet.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/safety-badge";
+import { TranscriptExport } from "@/components/run-transcript-export";
 
 export const Route = createFileRoute("/_authenticated/runs")({
   head: () => ({
@@ -133,6 +134,7 @@ function RunsPage() {
                   <p className="whitespace-pre-wrap text-foreground">
                     {run.output ?? run.error ?? "No output recorded."}
                   </p>
+                  <TranscriptExport runId={run.id} />
                 </div>
               )}
             </CardContent>

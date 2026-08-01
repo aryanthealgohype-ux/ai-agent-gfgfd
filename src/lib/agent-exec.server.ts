@@ -69,10 +69,26 @@ export async function executeRun(runId: string) {
 
   const { data: agent, error: agentError } = await supabaseAdmin
     .from("agents")
-    .select("id, name, slug, system_prompt, model, status, safety_rating")
+    .select("id, name, slug, system_prompt, model, status, safety_rating, webhook_url")
     .eq("id", run.agent_id)
     .single();
   if (agentError || !agent) throw new Error("Agent not found");
+
+  /** Queues the n8n callback (if configured) and tries it once immediately. */
+  async function dispatchWebhook(event: string, payload: Record<string, unknown>) {
+    if (!agent?.webhook_url) return;
+    const { enqueueWebhook, attemptDelivery } = await import("./webhooks.server");
+    const deliveryId = await enqueueWebhook({
+      orgId: run!.org_id,
+      agentId: agent.id,
+      runId: runId,
+      url: agent.webhook_url,
+      event,
+      payload,
+    });
+    if (deliveryId) await attemptDelivery(deliveryId);
+  }
+
 
   const { data: settings } = await supabaseAdmin
     .from("org_settings")
@@ -170,7 +186,25 @@ export async function executeRun(runId: string) {
       metadata: { run_id: runId, cost_usd: cost, model: agent.model },
     });
 
+    // Re-check spend after the fact so a run that crosses a cap alerts immediately.
+    const { enforceSpendLimits } = await import("./spend.server");
+    await enforceSpendLimits({ orgId: run.org_id, agentId: agent.id, agentName: agent.name }).catch(
+      () => undefined,
+    );
+
+    await dispatchWebhook("agent.run.succeeded", {
+      agent: { id: agent.id, slug: agent.slug, name: agent.name },
+      status: "succeeded",
+      input: run.input,
+      output: result.text,
+      cost_usd: cost,
+      duration_ms: duration,
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+    });
+
     return { status: "succeeded" as const, output: result.text, runId, cost, duration };
+
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const duration = Date.now() - started;
@@ -199,6 +233,14 @@ export async function executeRun(runId: string) {
       targetId: agent.slug,
       metadata: { run_id: runId, error: message },
     });
+    await dispatchWebhook("agent.run.failed", {
+      agent: { id: agent.id, slug: agent.slug, name: agent.name },
+      status: "failed",
+      input: run.input,
+      error: message,
+      duration_ms: duration,
+    });
     return { status: "failed" as const, output: null, runId, error: message };
+
   }
 }

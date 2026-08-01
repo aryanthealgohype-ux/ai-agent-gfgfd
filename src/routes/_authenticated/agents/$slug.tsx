@@ -11,6 +11,8 @@ import {
   rollbackAgent,
 } from "@/lib/fleet.functions";
 import { LiveRunLog } from "@/components/live-run-log";
+import { PromptDiff } from "@/components/prompt-diff";
+import { TranscriptExport } from "@/components/run-transcript-export";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +65,7 @@ function AgentConsole() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [activeRunStatus, setActiveRunStatus] = useState<string | null>(null);
+  const [diffVersionId, setDiffVersionId] = useState<string | null>(null);
 
   const agent = data?.agent;
 
@@ -200,8 +203,11 @@ function AgentConsole() {
 
           {output && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-3">
                 <CardTitle className="text-base">Latest output</CardTitle>
+                {(activeRunId ?? latestRun?.id) && (
+                  <TranscriptExport runId={(activeRunId ?? latestRun?.id)!} />
+                )}
               </CardHeader>
               <CardContent>
                 <pre className="whitespace-pre-wrap text-sm text-foreground">{output}</pre>
@@ -315,32 +321,62 @@ function AgentConsole() {
               <CardTitle className="text-base">Versions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Compare any snapshot against what is live today before you approve or roll back.
+              </p>
               {(data?.versions ?? []).map((version) => (
-                <div
-                  key={version.id}
-                  className="flex items-center justify-between gap-3 border-b border-border pb-2 last:border-0"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">v{version.version}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {version.change_note ?? "No note"} · {new Date(version.created_at).toLocaleString()}
-                    </p>
+                <div key={version.id} className="space-y-3 border-b border-border pb-3 last:border-0">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">v{version.version}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {version.change_note ?? "No note"} ·{" "}
+                        {new Date(version.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setDiffVersionId((current) => (current === version.id ? null : version.id))
+                        }
+                      >
+                        {diffVersionId === version.id ? "Hide diff" : "View diff"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            await rollback({ data: { versionId: version.id } });
+                            toast.success(`Rolled back to v${version.version}`);
+                            queryClient.invalidateQueries({ queryKey: ["agent", slug] });
+                          } catch (error) {
+                            toast.error((error as Error).message);
+                          }
+                        }}
+                      >
+                        Roll back
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await rollback({ data: { versionId: version.id } });
-                        toast.success(`Rolled back to v${version.version}`);
-                        queryClient.invalidateQueries({ queryKey: ["agent", slug] });
-                      } catch (error) {
-                        toast.error((error as Error).message);
-                      }
-                    }}
-                  >
-                    Roll back
-                  </Button>
+                  {diffVersionId === version.id && (
+                    <PromptDiff
+                      before={{
+                        label: `v${version.version}`,
+                        systemPrompt: version.system_prompt,
+                        model: version.model,
+                        requiresApproval: version.requires_approval,
+                      }}
+                      after={{
+                        label: `live v${agent.version}`,
+                        systemPrompt: agent.system_prompt,
+                        model: agent.model,
+                        requiresApproval: agent.requires_approval,
+                      }}
+                    />
+                  )}
                 </div>
               ))}
               {!(data?.versions ?? []).length && (
@@ -348,6 +384,7 @@ function AgentConsole() {
               )}
             </CardContent>
           </Card>
+
 
           <Card>
             <CardHeader>
