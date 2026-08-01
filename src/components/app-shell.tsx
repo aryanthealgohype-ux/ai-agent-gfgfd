@@ -16,6 +16,8 @@ import {
   Webhook,
   UserRound,
   Bell,
+  Building2,
+  ScanSearch,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { listApprovals } from "@/lib/fleet.functions";
@@ -34,6 +36,8 @@ const NAV = [
   { to: "/playbook", label: "Safety playbook", short: "Prompts", icon: BookLock },
   { to: "/deliveries", label: "Deliveries", short: "Hooks", icon: Webhook },
   { to: "/connectors", label: "Connectors", short: "Connect", icon: Plug },
+  { to: "/enterprise-console", label: "Enterprise", short: "Ent", icon: Building2 },
+  { to: "/security-scans", label: "Security scans", short: "Scans", icon: ScanSearch },
   { to: "/settings", label: "Settings", short: "Settings", icon: Settings },
   { to: "/audit", label: "Audit log", short: "Audit", icon: ScrollText },
   { to: "/profile", label: "Your profile", short: "You", icon: UserRound },
