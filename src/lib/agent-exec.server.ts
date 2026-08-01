@@ -186,7 +186,25 @@ export async function executeRun(runId: string) {
       metadata: { run_id: runId, cost_usd: cost, model: agent.model },
     });
 
+    // Re-check spend after the fact so a run that crosses a cap alerts immediately.
+    const { enforceSpendLimits } = await import("./spend.server");
+    await enforceSpendLimits({ orgId: run.org_id, agentId: agent.id, agentName: agent.name }).catch(
+      () => undefined,
+    );
+
+    await dispatchWebhook("agent.run.succeeded", {
+      agent: { id: agent.id, slug: agent.slug, name: agent.name },
+      status: "succeeded",
+      input: run.input,
+      output: result.text,
+      cost_usd: cost,
+      duration_ms: duration,
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+    });
+
     return { status: "succeeded" as const, output: result.text, runId, cost, duration };
+
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const duration = Date.now() - started;
