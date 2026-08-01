@@ -174,8 +174,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {workspace?.activeOrg?.name ?? "AI Operating System"}
               </span>
               <span className="block truncate text-[11px] text-muted-foreground">
-                {workspace?.profile?.full_name ?? workspace?.profile?.email ?? "Signed in"}
+                {workspace?.profile?.full_name ?? workspace?.email ?? "Signed in"}
               </span>
+
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-1">
