@@ -11,7 +11,9 @@ import path from "node:path";
 // Wrap mcpPlugin to resolve Windows path mismatch (forward vs backslashes)
 function patchedMcpPlugin(options?: any) {
   const plugin = mcpPlugin(options);
-  const originalConfigResolved = plugin.configResolved;
+  const originalConfigResolved = plugin.configResolved as
+    | ((this: unknown, config: any) => void | Promise<void>)
+    | undefined;
   if (originalConfigResolved) {
     plugin.configResolved = function (config: any) {
       const patchedConfig = new Proxy(config, {
