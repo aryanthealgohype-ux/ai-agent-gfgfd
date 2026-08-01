@@ -145,7 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Badge>
             ))}
           </div>
-          <Button variant="ghost" size="sm" className="mt-3 w-full justify-start" onClick={signOut}>
+          <Button variant="ghost" size="sm" className="mt-3 w-full justify-start" onClick={() => void signOut("manual")}>
             <LogOut className="size-4" /> Sign out
           </Button>
         </div>
@@ -185,7 +185,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               aria-label="Sign out"
-              onClick={signOut}
+              onClick={() => void signOut("manual")}
               className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent"
             >
               <LogOut className="size-4" />
