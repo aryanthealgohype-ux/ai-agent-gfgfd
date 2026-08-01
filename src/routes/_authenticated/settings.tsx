@@ -412,6 +412,8 @@ function RetentionPolicy() {
             ? `last purge ${new Date(data.settings.last_retention_run_at).toLocaleString()}`
             : "no purge run yet"}
         </p>
+        <RetentionProjection days={Number(days) || 30} archive={archive} />
+
         <div className="flex flex-wrap gap-2">
           <SaveRetentionButton
             days={days}
