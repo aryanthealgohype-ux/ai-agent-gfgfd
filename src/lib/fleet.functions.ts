@@ -259,7 +259,12 @@ export const runAgent = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { executeRun, auditLog } = await import("@/lib/agent-exec.server");
 
+    // Hard cost guardrail: blocks before anything is created or executed.
+    const { enforceSpendLimits } = await import("@/lib/spend.server");
+    await enforceSpendLimits({ orgId: agent.org_id, agentId: agent.id, agentName: agent.name });
+
     const gated = agent.requires_approval || agent.safety_rating >= 4;
+
 
     const { data: run, error: runError } = await supabaseAdmin
       .from("agent_runs")
