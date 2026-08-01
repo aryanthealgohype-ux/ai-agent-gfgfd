@@ -162,12 +162,13 @@ function AgentConsole() {
       </header>
 
       <Tabs defaultValue="run">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="run">Run</TabsTrigger>
-          <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="config">Config</TabsTrigger>
           <TabsTrigger value="safety">Safety</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="run" className="space-y-4 pt-4">
           <Card>
