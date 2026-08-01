@@ -296,12 +296,11 @@ function AgentConsole() {
               </div>
               <div>
                 <p className="font-medium text-foreground">Escalation rules</p>
-                <ul className="mt-1 list-inside list-disc text-muted-foreground">
-                  {agent.escalation_rules.map((rule: string) => (
-                    <li key={rule}>{rule}</li>
-                  ))}
-                </ul>
+                <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                  {agent.escalation_rules ?? "No escalation rules defined."}
+                </p>
               </div>
+
               <div>
                 <p className="font-medium text-foreground">Required connectors</p>
                 <div className="mt-1 flex flex-wrap gap-1">
