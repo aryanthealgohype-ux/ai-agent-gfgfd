@@ -233,6 +233,14 @@ export async function executeRun(runId: string) {
       targetId: agent.slug,
       metadata: { run_id: runId, error: message },
     });
+    await dispatchWebhook("agent.run.failed", {
+      agent: { id: agent.id, slug: agent.slug, name: agent.name },
+      status: "failed",
+      input: run.input,
+      error: message,
+      duration_ms: duration,
+    });
     return { status: "failed" as const, output: null, runId, error: message };
+
   }
 }
