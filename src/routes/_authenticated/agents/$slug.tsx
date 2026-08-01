@@ -132,7 +132,7 @@ function AgentConsole() {
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{agent.name}</h1>
+          <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{agent.name}</h1>
           <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
             {agent.category} · v{agent.version}
           </p>

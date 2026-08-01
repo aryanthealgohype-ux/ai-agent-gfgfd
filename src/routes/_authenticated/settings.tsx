@@ -77,7 +77,7 @@ function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {workspace?.activeOrg?.name} · these values replace {"{placeholders}"} inside every agent
           prompt at run time.
