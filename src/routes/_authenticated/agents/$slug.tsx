@@ -203,8 +203,11 @@ function AgentConsole() {
 
           {output && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-3">
                 <CardTitle className="text-base">Latest output</CardTitle>
+                {(activeRunId ?? latestRun?.id) && (
+                  <TranscriptExport runId={(activeRunId ?? latestRun?.id)!} />
+                )}
               </CardHeader>
               <CardContent>
                 <pre className="whitespace-pre-wrap text-sm text-foreground">{output}</pre>
