@@ -113,6 +113,12 @@ function DeliveriesPage() {
                 {delivery.status === "delivered"
                   ? `delivered ${new Date(delivery.delivered_at ?? delivery.updated_at).toLocaleString()}`
                   : `next attempt ${new Date(delivery.next_attempt_at).toLocaleString()}`}
+                {(delivery.replay_count ?? 0) > 0
+                  ? ` · reprocessed ${delivery.replay_count}×${delivery.last_replayed_at ? ` (last ${new Date(delivery.last_replayed_at).toLocaleString()})` : ""}`
+                  : ""}
+              </p>
+              <p className="truncate font-mono text-[10px] text-muted-foreground/80">
+                idempotency-key: {delivery.idempotency_key ?? `${delivery.run_id}:${delivery.event}`}
               </p>
               {delivery.last_error && (
                 <p className="whitespace-pre-wrap break-words rounded-md bg-destructive/5 p-2 text-xs text-destructive">
@@ -120,7 +126,12 @@ function DeliveriesPage() {
                 </p>
               )}
             </div>
-            {delivery.status !== "delivered" && (
+            {delivery.status === "delivered" ? (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <ShieldCheck className="size-3.5" />
+                Reprocessing blocked
+              </span>
+            ) : (
               <Button
                 size="sm"
                 variant="outline"
@@ -131,6 +142,7 @@ function DeliveriesPage() {
                 {busy === delivery.id ? "…" : "Retry now"}
               </Button>
             )}
+
           </div>
         ))}
       </div>
