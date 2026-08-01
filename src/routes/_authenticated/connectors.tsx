@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SocialPanel } from "@/components/social-panel";
 
 export const Route = createFileRoute("/_authenticated/connectors")({
   head: () => ({
@@ -54,19 +55,21 @@ function ConnectorsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Connectors</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl tracking-tight text-foreground">Connectors</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Agents reference these integrations. Credentials live in server-side secrets — never in the
           browser.
         </p>
       </header>
 
+      <SocialPanel />
+
       {isLoading && <p className="text-sm text-muted-foreground">Loading connectors…</p>}
 
       <div className="space-y-2">
         {connectors.map((connector) => (
           <Card key={connector.id}>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-foreground">{connector.label}</p>
@@ -87,7 +90,7 @@ function ConnectorsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Input
-                  className="w-44"
+                  className="w-full sm:w-44"
                   placeholder={connector.account_ref ?? "Account reference"}
                   value={refs[connector.id] ?? ""}
                   onChange={(event) =>
