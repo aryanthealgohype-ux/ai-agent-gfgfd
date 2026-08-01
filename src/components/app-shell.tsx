@@ -176,10 +176,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="block truncate text-[11px] text-muted-foreground">
                 {workspace?.profile?.full_name ?? workspace?.email ?? "Signed in"}
               </span>
-
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-1">
+            <ThemeToggle className="mr-1" />
             <Link
               to="/connectors"
               aria-label="Connectors"
@@ -187,6 +187,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <Plug className="size-4" />
             </Link>
+
             <Link
               to="/settings"
               aria-label="Settings"
