@@ -16,6 +16,7 @@ import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDeliveriesRouteImport } from './routes/_authenticated/deliveries'
 import { Route as AuthenticatedPlaybookRouteImport } from './routes/_authenticated/playbook'
 import { Route as AuthenticatedRunsRouteImport } from './routes/_authenticated/runs'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -56,6 +57,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDeliveriesRoute = AuthenticatedDeliveriesRouteImport.update({
+  id: '/deliveries',
+  path: '/deliveries',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlaybookRoute = AuthenticatedPlaybookRouteImport.update({
   id: '/playbook',
   path: '/playbook',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuthenticatedAuditRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deliveries': typeof AuthenticatedDeliveriesRoute
   '/playbook': typeof AuthenticatedPlaybookRoute
   '/runs': typeof AuthenticatedRunsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuthenticatedAuditRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deliveries': typeof AuthenticatedDeliveriesRoute
   '/playbook': typeof AuthenticatedPlaybookRoute
   '/runs': typeof AuthenticatedRunsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/deliveries': typeof AuthenticatedDeliveriesRoute
   '/_authenticated/playbook': typeof AuthenticatedPlaybookRoute
   '/_authenticated/runs': typeof AuthenticatedRunsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/connectors'
     | '/dashboard'
+    | '/deliveries'
     | '/playbook'
     | '/runs'
     | '/settings'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/connectors'
     | '/dashboard'
+    | '/deliveries'
     | '/playbook'
     | '/runs'
     | '/settings'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit'
     | '/_authenticated/connectors'
     | '/_authenticated/dashboard'
+    | '/_authenticated/deliveries'
     | '/_authenticated/playbook'
     | '/_authenticated/runs'
     | '/_authenticated/settings'
@@ -224,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deliveries': {
+      id: '/_authenticated/deliveries'
+      path: '/deliveries'
+      fullPath: '/deliveries'
+      preLoaderRoute: typeof AuthenticatedDeliveriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/playbook': {
       id: '/_authenticated/playbook'
       path: '/playbook'
@@ -267,6 +286,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDeliveriesRoute: typeof AuthenticatedDeliveriesRoute
   AuthenticatedPlaybookRoute: typeof AuthenticatedPlaybookRoute
   AuthenticatedRunsRoute: typeof AuthenticatedRunsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -279,6 +299,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDeliveriesRoute: AuthenticatedDeliveriesRoute,
   AuthenticatedPlaybookRoute: AuthenticatedPlaybookRoute,
   AuthenticatedRunsRoute: AuthenticatedRunsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
