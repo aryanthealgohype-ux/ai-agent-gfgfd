@@ -366,6 +366,65 @@ export const getRetentionPolicy = createServerFn({ method: "GET" })
     };
   });
 
+export type RetentionPreview = {
+  retention_days: number;
+  cutoff: string;
+  live_count: number;
+  live_bytes: number;
+  live_oldest: string | null;
+  live_newest: string | null;
+  stale_count: number;
+  stale_bytes: number;
+  stale_oldest: string | null;
+  stale_newest: string | null;
+  archived_count: number;
+  archived_bytes: number;
+  events_per_day: number;
+  bytes_per_day: number;
+};
+
+/**
+ * Dry run: projects storage impact for a candidate retention window and returns
+ * a sample of the exact log events that a purge/archive pass would touch.
+ */
+export const getRetentionPreview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ days: z.number().int().min(1).max(3650).optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: workspace } = await context.supabase.from("org_members").select("org_id").limit(1).maybeSingle();
+    if (!workspace) throw new Error("No workspace found for this account.");
+
+    const { data: preview, error } = await context.supabase.rpc("retention_preview", {
+      _org_id: workspace.org_id,
+      _days: data.days ?? null,
+    });
+    if (error) throw new Error(error.message);
+
+    const stats = preview as unknown as RetentionPreview;
+
+    const { data: sample } = await context.supabase
+      .from("run_logs")
+      .select("id, run_id, level, message, created_at")
+      .lt("created_at", stats.cutoff)
+      .order("created_at", { ascending: true })
+      .limit(25);
+
+    const { data: settings } = await context.supabase
+      .from("org_settings")
+      .select("archive_logs, last_retention_run_at, log_retention_days")
+      .maybeSingle();
+
+    return {
+      stats,
+      sample: sample ?? [],
+      archiveLogs: settings?.archive_logs ?? false,
+      lastRunAt: settings?.last_retention_run_at ?? null,
+      savedDays: settings?.log_retention_days ?? 30,
+    };
+
+
 export const updateRetentionPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
