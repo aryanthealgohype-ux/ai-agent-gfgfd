@@ -4,7 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import { AlertChannels } from "@/components/alert-channels";
+import { RetentionProjection } from "@/components/retention-projection";
 import { getSettings, getWorkspace, listAgents, listTeam, updatePlaceholders } from "@/lib/fleet.functions";
+
 import {
   applyRetentionNow,
   deleteSpendLimit,
@@ -128,7 +131,9 @@ function SettingsPage() {
       </Card>
 
       <SpendGuardrails />
+      <AlertChannels />
       <RetentionPolicy />
+
 
       <Card>
         <CardHeader>
@@ -412,6 +417,8 @@ function RetentionPolicy() {
             ? `last purge ${new Date(data.settings.last_retention_run_at).toLocaleString()}`
             : "no purge run yet"}
         </p>
+        <RetentionProjection days={Number(days) || 30} archive={archive} />
+
         <div className="flex flex-wrap gap-2">
           <SaveRetentionButton
             days={days}

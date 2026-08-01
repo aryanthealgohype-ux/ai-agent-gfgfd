@@ -107,8 +107,11 @@ async function raiseAlert(
 
   if (!inserted) return; // already alerted for this window
 
-  await supabaseAdmin.from("notifications").insert({
-    org_id: orgId,
+  const { dispatchAlert } = await import("./alerts.server");
+  await dispatchAlert({
+    orgId,
+    event: "spend_limit",
+    severity: kind === "blocked" ? "error" : "warning",
     title:
       kind === "blocked"
         ? `Spend limit reached — ${scopeLabel}`
@@ -117,8 +120,10 @@ async function raiseAlert(
       kind === "blocked"
         ? `${status.period} spend of $${status.spendUsd.toFixed(4)} hit the $${status.limitUsd.toFixed(2)} cap. Runs are blocked until the window resets or the limit is raised.`
         : `${status.period} spend is $${status.spendUsd.toFixed(4)} of the $${status.limitUsd.toFixed(2)} cap.`,
-    severity: kind === "blocked" ? "error" : "warning",
+    dedupeKey: `spend:${status.limitId}:${status.windowStart}:${kind}`,
+    metadata: { limit_id: status.limitId, period: status.period, agent_id: status.agentId },
   });
+
 
   await supabaseAdmin.from("audit_logs").insert({
     org_id: orgId,

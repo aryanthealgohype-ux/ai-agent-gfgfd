@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHash, createHmac } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BASE_DELAY_SECONDS = 30;
@@ -14,7 +14,18 @@ function sign(body: string) {
   return createHmac("sha256", secret).update(body).digest("hex");
 }
 
-/** Queues an outbound n8n callback. Delivery itself happens in attemptDelivery. */
+function fingerprint(value: unknown) {
+  return createHash("sha256").update(JSON.stringify(value ?? null)).digest("hex");
+}
+
+/**
+ * Queues an outbound n8n callback.
+ *
+ * Every callback carries a stable idempotency key (`run:event`) that survives
+ * retries and dead-letter reprocessing, so the receiver can safely discard a
+ * duplicate. Enqueueing the same key twice never creates a second row: an
+ * already-delivered callback is reported back instead of being re-sent.
+ */
 export async function enqueueWebhook(params: {
   orgId: string;
   agentId: string;
@@ -23,6 +34,19 @@ export async function enqueueWebhook(params: {
   event: string;
   payload: Record<string, unknown>;
 }) {
+  const idempotencyKey = `${params.runId}:${params.event}`;
+
+  const { data: existing } = await supabaseAdmin
+    .from("webhook_deliveries")
+    .select("id, status")
+    .eq("org_id", params.orgId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+
+  if (existing) {
+    return existing.status === "delivered" ? null : existing.id;
+  }
+
   const { data } = await supabaseAdmin
     .from("webhook_deliveries")
     .insert({
@@ -33,6 +57,8 @@ export async function enqueueWebhook(params: {
       event: params.event,
       payload: params.payload as never,
       status: "pending",
+      idempotency_key: idempotencyKey,
+      payload_hash: fingerprint(params.payload),
     })
     .select("id")
     .maybeSingle();
@@ -43,6 +69,7 @@ async function markRunLog(orgId: string, runId: string | null, message: string, 
   if (!runId) return;
   await supabaseAdmin.from("run_logs").insert({ org_id: orgId, run_id: runId, level, message });
 }
+
 
 /**
  * Delivers one queued webhook. On failure it schedules the next retry with
@@ -59,11 +86,16 @@ export async function attemptDelivery(deliveryId: string) {
   if (delivery.status === "delivered") return { ok: true, status: "delivered" as const };
 
   const attempt = delivery.attempts + 1;
+  const idempotencyKey = delivery.idempotency_key ?? `${delivery.run_id}:${delivery.event}`;
+  const payloadHash = delivery.payload_hash ?? fingerprint(delivery.payload);
   const body = JSON.stringify({
     event: delivery.event,
     delivery_id: delivery.id,
     run_id: delivery.run_id,
+    idempotency_key: idempotencyKey,
+    payload_hash: payloadHash,
     attempt,
+    replay: (delivery.replay_count ?? 0) > 0,
     payload: delivery.payload,
   });
 
@@ -71,9 +103,13 @@ export async function attemptDelivery(deliveryId: string) {
     "Content-Type": "application/json",
     "X-Delivery-Id": delivery.id,
     "X-Delivery-Attempt": String(attempt),
+    // Stable across retries and reprocessing so the receiver can dedupe.
+    "Idempotency-Key": idempotencyKey,
+    "X-Payload-Hash": payloadHash,
   };
   const signature = sign(body);
   if (signature) headers["X-Signature-256"] = `sha256=${signature}`;
+
 
   let statusCode: number | null = null;
   let errorMessage: string | null = null;
@@ -140,11 +176,15 @@ export async function attemptDelivery(deliveryId: string) {
   );
 
   if (exhausted) {
-    await supabaseAdmin.from("notifications").insert({
-      org_id: delivery.org_id,
-      title: "Webhook delivery dead-lettered",
-      body: `${attempt} attempts to ${delivery.url} failed. Last error: ${errorMessage}`,
+    const { dispatchAlert } = await import("./alerts.server");
+    await dispatchAlert({
+      orgId: delivery.org_id,
+      event: "dlq_failure",
       severity: "error",
+      title: "Webhook delivery dead-lettered",
+      body: `${attempt} attempts to ${delivery.url} failed (event ${delivery.event}). Last error: ${errorMessage}`,
+      dedupeKey: `dlq:${delivery.id}:${attempt}`,
+      metadata: { delivery_id: delivery.id, idempotency_key: idempotencyKey },
     });
     await supabaseAdmin.from("audit_logs").insert({
       org_id: delivery.org_id,
@@ -152,9 +192,10 @@ export async function attemptDelivery(deliveryId: string) {
       action: "webhook.dead_lettered",
       target_type: "webhook_delivery",
       target_id: delivery.id,
-      metadata: { attempts: attempt, error: errorMessage } as never,
+      metadata: { attempts: attempt, error: errorMessage, idempotency_key: idempotencyKey } as never,
     });
   }
+
 
   return { ok: false, status: exhausted ? ("dead_letter" as const) : ("retrying" as const) };
 }
