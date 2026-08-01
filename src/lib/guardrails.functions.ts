@@ -119,7 +119,7 @@ export const listDeliveries = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("webhook_deliveries")
       .select(
-        "id, org_id, run_id, url, event, status, attempts, max_attempts, next_attempt_at, last_status_code, last_error, delivered_at, created_at, updated_at, agents(name, slug)",
+        "id, org_id, run_id, url, event, status, attempts, max_attempts, next_attempt_at, last_status_code, last_error, delivered_at, created_at, updated_at, idempotency_key, payload_hash, replay_count, last_replayed_at, agents(name, slug)",
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -133,12 +133,49 @@ export const retryDelivery = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { data: delivery, error } = await context.supabase
       .from("webhook_deliveries")
-      .select("id, org_id, status, attempts, max_attempts")
+      .select("id, org_id, run_id, event, status, attempts, max_attempts, idempotency_key, replay_count, delivered_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!delivery) throw new Error("Delivery not found");
     await requireManager(context as never, delivery.org_id);
+
+    // Safeguard 1 — never re-send something the receiver already accepted.
+    if (delivery.status === "delivered") {
+      throw new Error(
+        `This callback already succeeded${delivery.delivered_at ? ` at ${new Date(delivery.delivered_at).toLocaleString()}` : ""}. Reprocessing is blocked so n8n cannot act on it twice.`,
+      );
+    }
+
+    const idempotencyKey = delivery.idempotency_key ?? `${delivery.run_id}:${delivery.event}`;
+
+    // Safeguard 2 — another delivery sharing this idempotency key already
+    // succeeded, so the work is done even though this row failed.
+    const { data: twin } = await context.supabase
+      .from("webhook_deliveries")
+      .select("id, delivered_at")
+      .eq("org_id", delivery.org_id)
+      .eq("idempotency_key", idempotencyKey)
+      .eq("status", "delivered")
+      .maybeSingle();
+    if (twin) {
+      throw new Error(
+        "A duplicate of this callback (same idempotency key) was already delivered successfully — reprocessing is blocked.",
+      );
+    }
+
+    // Safeguard 3 — don't stack concurrent attempts for the same key.
+    const { data: inFlight } = await context.supabase
+      .from("webhook_deliveries")
+      .select("id")
+      .eq("org_id", delivery.org_id)
+      .eq("idempotency_key", idempotencyKey)
+      .in("status", ["pending", "retrying"])
+      .neq("id", delivery.id)
+      .maybeSingle();
+    if (inFlight) {
+      throw new Error("Another attempt with the same idempotency key is already queued — wait for it to finish.");
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
@@ -149,6 +186,9 @@ export const retryDelivery = createServerFn({ method: "POST" })
         // Reprocessing a dead letter gives it a fresh attempt budget.
         attempts: data.reset || delivery.status === "dead_letter" ? 0 : delivery.attempts,
         last_error: null,
+        idempotency_key: idempotencyKey,
+        replay_count: (delivery.replay_count ?? 0) + 1,
+        last_replayed_at: new Date().toISOString(),
       })
       .eq("id", delivery.id);
 
@@ -162,7 +202,7 @@ export const retryDelivery = createServerFn({ method: "POST" })
       action: "webhook.requeued",
       targetType: "webhook_delivery",
       targetId: delivery.id,
-      metadata: { result: result.status },
+      metadata: { result: result.status, idempotency_key: idempotencyKey },
     });
     return result;
   });
@@ -177,6 +217,130 @@ export const drainDeliveryQueue = createServerFn({ method: "POST" })
     const { processWebhookQueue } = await import("@/lib/webhooks.server");
     return processWebhookQueue(workspace.org_id);
   });
+
+/* ============ ALERT CHANNELS ============ */
+
+const ALERT_EVENTS = ["spend_limit", "dlq_failure"] as const;
+
+export const listAlertChannels = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("alert_channels")
+      .select("id, org_id, kind, target, label, events, enabled, last_sent_at, last_error, created_at")
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const saveAlertChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: uuid.optional(),
+        kind: z.enum(["in_app", "email", "slack"]),
+        target: z.string().trim().max(500).nullable().optional(),
+        label: z.string().trim().max(120).nullable().optional(),
+        events: z.array(z.enum(ALERT_EVENTS)).min(1),
+        enabled: z.boolean(),
+      })
+      .superRefine((value, ctx) => {
+        if (value.kind === "email" && !z.string().email().safeParse(value.target ?? "").success) {
+          ctx.addIssue({ code: "custom", message: "Enter a valid email address", path: ["target"] });
+        }
+        if (value.kind === "slack" && !/^https:\/\/hooks\.slack\.com\/.+/.test(value.target ?? "")) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Slack needs an incoming webhook URL starting with https://hooks.slack.com/",
+            path: ["target"],
+          });
+        }
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: workspace } = await context.supabase.from("org_members").select("org_id").limit(1).maybeSingle();
+    if (!workspace) throw new Error("No workspace found for this account.");
+
+    const payload = {
+      org_id: workspace.org_id,
+      kind: data.kind,
+      target: data.kind === "in_app" ? null : (data.target ?? null),
+      label: data.label ?? null,
+      events: data.events,
+      enabled: data.enabled,
+      created_by: context.userId,
+      last_error: null,
+    };
+
+    const query = data.id
+      ? context.supabase.from("alert_channels").update(payload).eq("id", data.id)
+      : context.supabase.from("alert_channels").insert(payload);
+
+    const { data: saved, error } = await query.select("id, kind, target, events, enabled").maybeSingle();
+    if (error) {
+      if (error.code === "23505" || error.message.includes("duplicate key")) {
+        throw new Error("That alert destination is already configured.");
+      }
+      throw new Error(error.message);
+    }
+    if (!saved) throw new Error("Only admins and managers can change alert channels.");
+
+    const { auditLog } = await import("@/lib/agent-exec.server");
+    await auditLog({
+      orgId: workspace.org_id,
+      actorId: context.userId,
+      action: data.id ? "alerts.channel_updated" : "alerts.channel_added",
+      targetType: "alert_channel",
+      targetId: saved.id,
+      metadata: { kind: saved.kind, events: saved.events, enabled: saved.enabled },
+    });
+    return saved;
+  });
+
+export const deleteAlertChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: uuid }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { data: removed, error } = await context.supabase
+      .from("alert_channels")
+      .delete()
+      .eq("id", data.id)
+      .select("id, org_id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!removed) throw new Error("Only admins and managers can remove alert channels.");
+    return { id: removed.id };
+  });
+
+export const testAlertChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: uuid }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { data: channel, error } = await context.supabase
+      .from("alert_channels")
+      .select("id, org_id, kind, events")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!channel) throw new Error("Alert channel not found");
+    await requireManager(context as never, channel.org_id);
+
+    const { dispatchAlert } = await import("@/lib/alerts.server");
+    const results = await dispatchAlert({
+      orgId: channel.org_id,
+      event: (channel.events[0] ?? "spend_limit") as "spend_limit" | "dlq_failure",
+      severity: "info",
+      title: "Test alert from your AI Operating System",
+      body: "If you can read this, alert delivery for spend stops and dead-letter failures is working.",
+      dedupeKey: `test:${channel.id}:${Date.now()}`,
+    });
+    const mine = results.find((r) => r.channelId === channel.id);
+    if (mine && !mine.ok) throw new Error(mine.error ?? "Delivery failed");
+    return { ok: true, kind: channel.kind };
+  });
+
 
 /* ============ LOG RETENTION ============ */
 
