@@ -462,6 +462,21 @@ export type Database = {
           },
         ]
       }
+      bootstrap_owners: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       connectors: {
         Row: {
           account_ref: string | null
@@ -508,6 +523,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      login_history: {
+        Row: {
+          created_at: string
+          detail: string | null
+          device_id: string | null
+          event: string
+          id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          device_id?: string | null
+          event: string
+          id?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          device_id?: string | null
+          event?: string
+          id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -647,27 +692,57 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
+          company: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          language: string
+          last_login_at: string | null
+          last_seen_at: string | null
+          phone: string | null
+          theme: string
+          timezone: string
+          two_factor_enabled: boolean
           updated_at: string
+          website: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
+          language?: string
+          last_login_at?: string | null
+          last_seen_at?: string | null
+          phone?: string | null
+          theme?: string
+          timezone?: string
+          two_factor_enabled?: boolean
           updated_at?: string
+          website?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          language?: string
+          last_login_at?: string | null
+          last_seen_at?: string | null
+          phone?: string | null
+          theme?: string
+          timezone?: string
+          two_factor_enabled?: boolean
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -866,6 +941,45 @@ export type Database = {
           },
         ]
       }
+      user_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          label: string | null
+          last_seen_at: string
+          platform: string | null
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          label?: string | null
+          last_seen_at?: string
+          platform?: string | null
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          label?: string | null
+          last_seen_at?: string
+          platform?: string | null
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1006,6 +1120,7 @@ export type Database = {
     Functions: {
       apply_log_retention: { Args: never; Returns: number }
       can_manage: { Args: { _org_id: string }; Returns: boolean }
+      ensure_owner_role: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _org_id: string
@@ -1015,6 +1130,15 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
+      record_login: {
+        Args: {
+          _device_id: string
+          _label: string
+          _platform: string
+          _user_agent: string
+        }
+        Returns: undefined
+      }
       retention_preview: {
         Args: { _days?: number; _org_id: string }
         Returns: Json
@@ -1031,7 +1155,7 @@ export type Database = {
         | "security"
       agent_status: "active" | "paused"
       alert_channel_kind: "in_app" | "email" | "slack"
-      app_role: "admin" | "manager" | "employee" | "client"
+      app_role: "admin" | "manager" | "employee" | "client" | "owner"
       approval_status: "pending" | "approved" | "denied"
       run_status:
         | "pending_approval"
@@ -1179,7 +1303,7 @@ export const Constants = {
       ],
       agent_status: ["active", "paused"],
       alert_channel_kind: ["in_app", "email", "slack"],
-      app_role: ["admin", "manager", "employee", "client"],
+      app_role: ["admin", "manager", "employee", "client", "owner"],
       approval_status: ["pending", "approved", "denied"],
       run_status: [
         "pending_approval",
