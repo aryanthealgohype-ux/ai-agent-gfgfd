@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHash, createHmac } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BASE_DELAY_SECONDS = 30;
@@ -14,7 +14,18 @@ function sign(body: string) {
   return createHmac("sha256", secret).update(body).digest("hex");
 }
 
-/** Queues an outbound n8n callback. Delivery itself happens in attemptDelivery. */
+function fingerprint(value: unknown) {
+  return createHash("sha256").update(JSON.stringify(value ?? null)).digest("hex");
+}
+
+/**
+ * Queues an outbound n8n callback.
+ *
+ * Every callback carries a stable idempotency key (`run:event`) that survives
+ * retries and dead-letter reprocessing, so the receiver can safely discard a
+ * duplicate. Enqueueing the same key twice never creates a second row: an
+ * already-delivered callback is reported back instead of being re-sent.
+ */
 export async function enqueueWebhook(params: {
   orgId: string;
   agentId: string;
@@ -23,6 +34,19 @@ export async function enqueueWebhook(params: {
   event: string;
   payload: Record<string, unknown>;
 }) {
+  const idempotencyKey = `${params.runId}:${params.event}`;
+
+  const { data: existing } = await supabaseAdmin
+    .from("webhook_deliveries")
+    .select("id, status")
+    .eq("org_id", params.orgId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+
+  if (existing) {
+    return existing.status === "delivered" ? null : existing.id;
+  }
+
   const { data } = await supabaseAdmin
     .from("webhook_deliveries")
     .insert({
@@ -33,6 +57,8 @@ export async function enqueueWebhook(params: {
       event: params.event,
       payload: params.payload as never,
       status: "pending",
+      idempotency_key: idempotencyKey,
+      payload_hash: fingerprint(params.payload),
     })
     .select("id")
     .maybeSingle();
@@ -43,6 +69,7 @@ async function markRunLog(orgId: string, runId: string | null, message: string, 
   if (!runId) return;
   await supabaseAdmin.from("run_logs").insert({ org_id: orgId, run_id: runId, level, message });
 }
+
 
 /**
  * Delivers one queued webhook. On failure it schedules the next retry with
