@@ -52,6 +52,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const stampLogin = useServerFn(recordLogin);
+  const { next } = Route.useSearch();
   useTheme();
 
   const [mode, setMode] = useState<Mode>("signin");
@@ -67,19 +68,24 @@ function AuthPage() {
   // A valid session must never see this page again.
   useEffect(() => {
     let cancelled = false;
+    const land = () => {
+      if (next) {
+        window.location.replace(next);
+        return;
+      }
+      navigate({ to: "/dashboard", replace: true });
+    };
     supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled && data.session) navigate({ to: "/dashboard", replace: true });
+      if (!cancelled && data.session) land();
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-        navigate({ to: "/dashboard", replace: true });
-      }
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) land();
     });
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, next]);
 
   /** Warms every dashboard dependency before we leave the login screen. */
   async function completeSignIn() {
@@ -94,6 +100,11 @@ function AuthPage() {
       // Device bookkeeping must never block a valid sign-in.
     }
     await queryClient.invalidateQueries();
+    // An OAuth/MCP consent handoff must return to the page that sent us here.
+    if (next) {
+      window.location.replace(next);
+      return;
+    }
     navigate({ to: "/dashboard", replace: true });
   }
 
