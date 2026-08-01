@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedRunsRouteImport } from './routes/_authenticated/runs'
 import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenticated/agents/index'
 import { Route as AuthenticatedAgentsSlugRouteImport } from './routes/_authenticated/agents/$slug'
 
@@ -35,6 +36,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRunsRoute = AuthenticatedRunsRouteImport.update({
+  id: '/runs',
+  path: '/runs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAgentsIndexRoute =
   AuthenticatedAgentsIndexRouteImport.update({
     id: '/agents/',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/runs': typeof AuthenticatedRunsRoute
   '/agents/$slug': typeof AuthenticatedAgentsSlugRoute
   '/agents/': typeof AuthenticatedAgentsIndexRoute
 }
@@ -58,6 +65,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/runs': typeof AuthenticatedRunsRoute
   '/agents/$slug': typeof AuthenticatedAgentsSlugRoute
   '/agents': typeof AuthenticatedAgentsIndexRoute
 }
@@ -67,20 +75,23 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/runs': typeof AuthenticatedRunsRoute
   '/_authenticated/agents/$slug': typeof AuthenticatedAgentsSlugRoute
   '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/approvals' | '/dashboard' | '/agents/$slug' | '/agents/'
+  fullPaths:
+    '/' | '/approvals' | '/dashboard' | '/runs' | '/agents/$slug' | '/agents/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/approvals' | '/dashboard' | '/agents/$slug' | '/agents'
+  to: '/' | '/approvals' | '/dashboard' | '/runs' | '/agents/$slug' | '/agents'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/_authenticated/approvals'
     | '/_authenticated/dashboard'
+    | '/_authenticated/runs'
     | '/_authenticated/agents/$slug'
     | '/_authenticated/agents/'
   fileRoutesById: FileRoutesById
@@ -120,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/runs': {
+      id: '/_authenticated/runs'
+      path: '/runs'
+      fullPath: '/runs'
+      preLoaderRoute: typeof AuthenticatedRunsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/agents/': {
       id: '/_authenticated/agents/'
       path: '/agents'
@@ -140,6 +158,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedRunsRoute: typeof AuthenticatedRunsRoute
   AuthenticatedAgentsSlugRoute: typeof AuthenticatedAgentsSlugRoute
   AuthenticatedAgentsIndexRoute: typeof AuthenticatedAgentsIndexRoute
 }
@@ -147,6 +166,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedRunsRoute: AuthenticatedRunsRoute,
   AuthenticatedAgentsSlugRoute: AuthenticatedAgentsSlugRoute,
   AuthenticatedAgentsIndexRoute: AuthenticatedAgentsIndexRoute,
 }
