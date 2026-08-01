@@ -11,6 +11,8 @@ import {
   rollbackAgent,
 } from "@/lib/fleet.functions";
 import { LiveRunLog } from "@/components/live-run-log";
+import { PromptDiff } from "@/components/prompt-diff";
+import { TranscriptExport } from "@/components/run-transcript-export";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +65,7 @@ function AgentConsole() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [activeRunStatus, setActiveRunStatus] = useState<string | null>(null);
+  const [diffVersionId, setDiffVersionId] = useState<string | null>(null);
 
   const agent = data?.agent;
 
