@@ -127,7 +127,10 @@ function AuthPage() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin, data: { full_name: fullName } },
+          options: {
+            emailRedirectTo: next ? `${window.location.origin}${next}` : window.location.origin,
+            data: { full_name: fullName },
+          },
         });
         if (signUpError) throw signUpError;
         if (!data.session) {
