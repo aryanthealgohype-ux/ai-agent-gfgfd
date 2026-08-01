@@ -50,9 +50,11 @@ import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDeliveriesRouteImport } from './routes/_authenticated/deliveries'
+import { Route as AuthenticatedEnterpriseConsoleRouteImport } from './routes/_authenticated/enterprise-console'
 import { Route as AuthenticatedPlaybookRouteImport } from './routes/_authenticated/playbook'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedRunsRouteImport } from './routes/_authenticated/runs'
+import { Route as AuthenticatedSecurityScansRouteImport } from './routes/_authenticated/security-scans'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as Char126authInitiateRouteImport } from './routes/[~]auth.initiate'
@@ -268,6 +270,12 @@ const AuthenticatedDeliveriesRoute = AuthenticatedDeliveriesRouteImport.update({
   path: '/deliveries',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEnterpriseConsoleRoute =
+  AuthenticatedEnterpriseConsoleRouteImport.update({
+    id: '/enterprise-console',
+    path: '/enterprise-console',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlaybookRoute = AuthenticatedPlaybookRouteImport.update({
   id: '/playbook',
   path: '/playbook',
@@ -283,6 +291,12 @@ const AuthenticatedRunsRoute = AuthenticatedRunsRouteImport.update({
   path: '/runs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSecurityScansRoute =
+  AuthenticatedSecurityScansRouteImport.update({
+    id: '/security-scans',
+    path: '/security-scans',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -367,9 +381,11 @@ export interface FileRoutesByFullPath {
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deliveries': typeof AuthenticatedDeliveriesRoute
+  '/enterprise-console': typeof AuthenticatedEnterpriseConsoleRoute
   '/playbook': typeof AuthenticatedPlaybookRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/runs': typeof AuthenticatedRunsRoute
+  '/security-scans': typeof AuthenticatedSecurityScansRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/~auth/initiate': typeof Char126authInitiateRoute
@@ -420,9 +436,11 @@ export interface FileRoutesByTo {
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deliveries': typeof AuthenticatedDeliveriesRoute
+  '/enterprise-console': typeof AuthenticatedEnterpriseConsoleRoute
   '/playbook': typeof AuthenticatedPlaybookRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/runs': typeof AuthenticatedRunsRoute
+  '/security-scans': typeof AuthenticatedSecurityScansRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/~auth/initiate': typeof Char126authInitiateRoute
@@ -474,9 +492,11 @@ export interface FileRoutesById {
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/deliveries': typeof AuthenticatedDeliveriesRoute
+  '/_authenticated/enterprise-console': typeof AuthenticatedEnterpriseConsoleRoute
   '/_authenticated/playbook': typeof AuthenticatedPlaybookRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/runs': typeof AuthenticatedRunsRoute
+  '/_authenticated/security-scans': typeof AuthenticatedSecurityScansRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/~auth/initiate': typeof Char126authInitiateRoute
@@ -529,9 +549,11 @@ export interface FileRouteTypes {
     | '/connectors'
     | '/dashboard'
     | '/deliveries'
+    | '/enterprise-console'
     | '/playbook'
     | '/profile'
     | '/runs'
+    | '/security-scans'
     | '/settings'
     | '/auth/callback'
     | '/~auth/initiate'
@@ -582,9 +604,11 @@ export interface FileRouteTypes {
     | '/connectors'
     | '/dashboard'
     | '/deliveries'
+    | '/enterprise-console'
     | '/playbook'
     | '/profile'
     | '/runs'
+    | '/security-scans'
     | '/settings'
     | '/auth/callback'
     | '/~auth/initiate'
@@ -635,9 +659,11 @@ export interface FileRouteTypes {
     | '/_authenticated/connectors'
     | '/_authenticated/dashboard'
     | '/_authenticated/deliveries'
+    | '/_authenticated/enterprise-console'
     | '/_authenticated/playbook'
     | '/_authenticated/profile'
     | '/_authenticated/runs'
+    | '/_authenticated/security-scans'
     | '/_authenticated/settings'
     | '/auth/callback'
     | '/~auth/initiate'
@@ -980,6 +1006,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeliveriesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/enterprise-console': {
+      id: '/_authenticated/enterprise-console'
+      path: '/enterprise-console'
+      fullPath: '/enterprise-console'
+      preLoaderRoute: typeof AuthenticatedEnterpriseConsoleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/playbook': {
       id: '/_authenticated/playbook'
       path: '/playbook'
@@ -999,6 +1032,13 @@ declare module '@tanstack/react-router' {
       path: '/runs'
       fullPath: '/runs'
       preLoaderRoute: typeof AuthenticatedRunsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/security-scans': {
+      id: '/_authenticated/security-scans'
+      path: '/security-scans'
+      fullPath: '/security-scans'
+      preLoaderRoute: typeof AuthenticatedSecurityScansRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -1066,9 +1106,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDeliveriesRoute: typeof AuthenticatedDeliveriesRoute
+  AuthenticatedEnterpriseConsoleRoute: typeof AuthenticatedEnterpriseConsoleRoute
   AuthenticatedPlaybookRoute: typeof AuthenticatedPlaybookRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedRunsRoute: typeof AuthenticatedRunsRoute
+  AuthenticatedSecurityScansRoute: typeof AuthenticatedSecurityScansRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAgentsSlugRoute: typeof AuthenticatedAgentsSlugRoute
   AuthenticatedAgentsIndexRoute: typeof AuthenticatedAgentsIndexRoute
@@ -1080,9 +1122,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDeliveriesRoute: AuthenticatedDeliveriesRoute,
+  AuthenticatedEnterpriseConsoleRoute: AuthenticatedEnterpriseConsoleRoute,
   AuthenticatedPlaybookRoute: AuthenticatedPlaybookRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedRunsRoute: AuthenticatedRunsRoute,
+  AuthenticatedSecurityScansRoute: AuthenticatedSecurityScansRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAgentsSlugRoute: AuthenticatedAgentsSlugRoute,
   AuthenticatedAgentsIndexRoute: AuthenticatedAgentsIndexRoute,
