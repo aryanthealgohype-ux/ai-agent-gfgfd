@@ -176,11 +176,15 @@ export async function attemptDelivery(deliveryId: string) {
   );
 
   if (exhausted) {
-    await supabaseAdmin.from("notifications").insert({
-      org_id: delivery.org_id,
-      title: "Webhook delivery dead-lettered",
-      body: `${attempt} attempts to ${delivery.url} failed. Last error: ${errorMessage}`,
+    const { dispatchAlert } = await import("./alerts.server");
+    await dispatchAlert({
+      orgId: delivery.org_id,
+      event: "dlq_failure",
       severity: "error",
+      title: "Webhook delivery dead-lettered",
+      body: `${attempt} attempts to ${delivery.url} failed (event ${delivery.event}). Last error: ${errorMessage}`,
+      dedupeKey: `dlq:${delivery.id}:${attempt}`,
+      metadata: { delivery_id: delivery.id, idempotency_key: idempotencyKey },
     });
     await supabaseAdmin.from("audit_logs").insert({
       org_id: delivery.org_id,
@@ -188,9 +192,10 @@ export async function attemptDelivery(deliveryId: string) {
       action: "webhook.dead_lettered",
       target_type: "webhook_delivery",
       target_id: delivery.id,
-      metadata: { attempts: attempt, error: errorMessage } as never,
+      metadata: { attempts: attempt, error: errorMessage, idempotency_key: idempotencyKey } as never,
     });
   }
+
 
   return { ok: false, status: exhausted ? ("dead_letter" as const) : ("retrying" as const) };
 }
