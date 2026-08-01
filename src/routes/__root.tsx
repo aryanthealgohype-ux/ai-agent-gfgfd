@@ -84,15 +84,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Run, gate and audit a fleet of specialised AI agents from one multi-tenant command center.",
+          "Run, gate and audit a fleet of 23 specialised AI agents from one multi-tenant command center with human approval on every high-risk action.",
       },
       { property: "og:title", content: "AI Operating System — Agent Fleet Command Center" },
       {
         property: "og:description",
-        content: "Run, gate and audit specialised AI agents with human approval on high-risk actions.",
+        content: "Run, gate and audit a fleet of 23 specialised AI agents from one multi-tenant command center with human approval on every high-risk action.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "AI Operating System — Agent Fleet Command Center" },
+      { name: "twitter:description", content: "Run, gate and audit a fleet of 23 specialised AI agents from one multi-tenant command center with human approval on every high-risk action." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6420e8bd-799e-4177-b432-ab1f3916824d/id-preview-42f66828--d1951278-2c6b-4d1b-8409-21756b157a37.lovable.app-1785568781322.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6420e8bd-799e-4177-b432-ab1f3916824d/id-preview-42f66828--d1951278-2c6b-4d1b-8409-21756b157a37.lovable.app-1785568781322.png" },
     ],
     links: [
       {
@@ -108,7 +112,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
 
   }),

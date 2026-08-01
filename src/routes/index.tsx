@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Run, gate and audit 23 specialised AI agents with human approval on every high-risk action.",
+          "Run, gate and audit a fleet of 23 specialised AI agents from one multi-tenant command center with human approval on every high-risk action.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
