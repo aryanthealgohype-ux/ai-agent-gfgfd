@@ -133,23 +133,34 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="mt-6 rounded-lg border border-border p-3">
-          <p className="truncate text-sm font-medium text-foreground">
-            {workspace?.profile?.full_name ?? workspace?.profile?.email ?? "Signed in"}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">{workspace?.activeOrg?.name}</p>
-          <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-6 space-y-3 rounded-lg border border-border p-3">
+          <Link to="/profile" className="block min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {workspace?.profile?.full_name ?? workspace?.email ?? "Signed in"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{workspace?.activeOrg?.name}</p>
+          </Link>
+          <div className="flex flex-wrap gap-1">
             {(workspace?.roles ?? []).map((role) => (
               <Badge key={role} variant="secondary" className="text-[10px] uppercase">
                 {role}
               </Badge>
             ))}
           </div>
-          <Button variant="ghost" size="sm" className="mt-3 w-full justify-start" onClick={() => void signOut("manual")}>
+          <div className="flex items-center justify-between gap-2">
+            <ThemeToggle />
+            {(workspace?.notificationCount ?? 0) > 0 && (
+              <Badge variant="outline" className="gap-1">
+                <Bell className="size-3" /> {workspace?.notificationCount}
+              </Badge>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => void signOut("manual")}>
             <LogOut className="size-4" /> Sign out
           </Button>
         </div>
       </aside>
+
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar: identity + sign out only, navigation lives at the bottom. */}
