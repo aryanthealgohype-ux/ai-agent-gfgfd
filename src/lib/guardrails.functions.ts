@@ -423,6 +423,9 @@ export const getRetentionPreview = createServerFn({ method: "GET" })
       lastRunAt: settings?.last_retention_run_at ?? null,
       savedDays: settings?.log_retention_days ?? 30,
     };
+  });
+
+
 
 
 export const updateRetentionPolicy = createServerFn({ method: "POST" })
