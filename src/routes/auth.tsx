@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Bot, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { recordLogin } from "@/lib/account.functions";
 import { describeDevice, getDeviceId, setRememberMe } from "@/lib/session";
 import { ThemeToggle, useTheme } from "@/components/theme-toggle";
@@ -24,7 +23,7 @@ function safePath(value: unknown): string | undefined {
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
-    next: safePath(search['next']),
+    next: safePath(search["next"]),
   }),
   head: () => ({
     meta: [
@@ -94,7 +93,12 @@ function AuthPage() {
     const device = describeDevice();
     try {
       await stampLogin({
-        data: { deviceId: getDeviceId(), label: device.label, userAgent: device.userAgent, platform: device.platform },
+        data: {
+          deviceId: getDeviceId(),
+          label: device.label,
+          userAgent: device.userAgent,
+          platform: device.platform,
+        },
       });
     } catch {
       // Device bookkeeping must never block a valid sign-in.
@@ -147,7 +151,11 @@ function AuthPage() {
       await completeSignIn();
     } catch (caught) {
       const message = (caught as Error).message || "Something went wrong. Please try again.";
-      setError(message.includes("Invalid login credentials") ? "That email and password don't match." : message);
+      setError(
+        message.includes("Invalid login credentials")
+          ? "That email and password don't match."
+          : message,
+      );
       setHandoff(false);
     } finally {
       setBusy(false);
@@ -158,16 +166,20 @@ function AuthPage() {
     setError(null);
     setBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: next ? `${window.location.origin}${next}` : window.location.origin,
+      const callback = new URL("/auth/callback", window.location.origin);
+      if (next) callback.searchParams.set("next", next);
+
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callback.toString(),
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
       });
-      if (result.error) {
-        setError("Google sign-in failed. Please try again.");
-        return;
-      }
-      if (result.redirected) return;
-      toast.success("Welcome back.");
-      await completeSignIn();
+      if (oauthError) throw oauthError;
     } finally {
       setBusy(false);
     }
@@ -211,10 +223,12 @@ function AuthPage() {
           </h2>
           <ul className="space-y-3 text-sm text-primary-foreground/85">
             <li className="flex items-center gap-2">
-              <ShieldCheck className="size-4 shrink-0" /> Safety-rated agents with human approval gates
+              <ShieldCheck className="size-4 shrink-0" /> Safety-rated agents with human approval
+              gates
             </li>
             <li className="flex items-center gap-2">
-              <Sparkles className="size-4 shrink-0" /> Live run logs, spend guardrails and audit trails
+              <Sparkles className="size-4 shrink-0" /> Live run logs, spend guardrails and audit
+              trails
             </li>
             <li className="flex items-center gap-2">
               <Lock className="size-4 shrink-0" /> Role-based access with per-tenant isolation
@@ -272,7 +286,8 @@ function AuthPage() {
                     Continue with Google
                   </Button>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+                    <span className="h-px flex-1 bg-border" /> or{" "}
+                    <span className="h-px flex-1 bg-border" />
                   </div>
                 </>
               )}
