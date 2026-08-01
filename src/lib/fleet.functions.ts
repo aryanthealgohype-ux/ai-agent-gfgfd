@@ -434,6 +434,71 @@ export const getRunLogs = createServerFn({ method: "GET" })
     return logs ?? [];
   });
 
+/**
+ * Fleet-wide log tail: the most recent events across every run in the workspace,
+ * already joined to the run + agent so the stream can be labelled and filtered.
+ * RLS scopes rows to the caller's org.
+ */
+export const getFleetActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ limit: z.number().int().min(20).max(400).default(150) })
+      .partial()
+      .default({})
+      .parse(input ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    const limit = data.limit ?? 150;
+
+    const { data: logs, error } = await context.supabase
+      .from("run_logs")
+      .select("id, run_id, level, message, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(error.message);
+
+    const runIds = [...new Set((logs ?? []).map((l) => l.run_id))];
+
+    const { data: runs } = runIds.length
+      ? await context.supabase
+          .from("agent_runs")
+          .select("id, status, input, created_at, completed_at, agents(name, slug, safety_rating, category)")
+          .in("id", runIds)
+      : { data: [] };
+
+    // Runs currently in flight, even if they have not logged anything yet.
+    const { data: active } = await context.supabase
+      .from("agent_runs")
+      .select("id, status, input, created_at, agents(name, slug, safety_rating)")
+      .in("status", ["queued", "running"])
+      .order("created_at", { ascending: false })
+      .limit(25);
+
+    return {
+      logs: (logs ?? []).reverse(),
+      runs: runs ?? [],
+      active: active ?? [],
+    };
+  });
+
+/** Labels for runs that appeared in the live stream after the initial seed. */
+export const getRunLabels = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ runIds: z.array(uuid).min(1).max(50) }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: runs, error } = await context.supabase
+      .from("agent_runs")
+      .select("id, status, input, created_at, completed_at, agents(name, slug, safety_rating, category)")
+      .in("id", data.runIds);
+    if (error) throw new Error(error.message);
+    return runs ?? [];
+  });
+
+
+
 export const listConnectors = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
