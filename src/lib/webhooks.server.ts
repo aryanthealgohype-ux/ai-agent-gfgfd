@@ -86,11 +86,16 @@ export async function attemptDelivery(deliveryId: string) {
   if (delivery.status === "delivered") return { ok: true, status: "delivered" as const };
 
   const attempt = delivery.attempts + 1;
+  const idempotencyKey = delivery.idempotency_key ?? `${delivery.run_id}:${delivery.event}`;
+  const payloadHash = delivery.payload_hash ?? fingerprint(delivery.payload);
   const body = JSON.stringify({
     event: delivery.event,
     delivery_id: delivery.id,
     run_id: delivery.run_id,
+    idempotency_key: idempotencyKey,
+    payload_hash: payloadHash,
     attempt,
+    replay: (delivery.replay_count ?? 0) > 0,
     payload: delivery.payload,
   });
 
@@ -98,9 +103,13 @@ export async function attemptDelivery(deliveryId: string) {
     "Content-Type": "application/json",
     "X-Delivery-Id": delivery.id,
     "X-Delivery-Attempt": String(attempt),
+    // Stable across retries and reprocessing so the receiver can dedupe.
+    "Idempotency-Key": idempotencyKey,
+    "X-Payload-Hash": payloadHash,
   };
   const signature = sign(body);
   if (signature) headers["X-Signature-256"] = `sha256=${signature}`;
+
 
   let statusCode: number | null = null;
   let errorMessage: string | null = null;
