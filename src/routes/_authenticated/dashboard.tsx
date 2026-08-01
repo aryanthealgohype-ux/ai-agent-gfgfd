@@ -193,6 +193,10 @@ function Dashboard() {
           </CardContent>
         </Card>
 
+        <FleetActivityStream className="lg:col-span-2" />
+
+
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Recent runs</CardTitle>
