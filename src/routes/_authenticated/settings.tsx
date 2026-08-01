@@ -10,6 +10,7 @@ import {
   deleteSpendLimit,
   getRetentionPolicy,
   getSpendGuardrails,
+  updateRetentionPolicy,
   upsertSpendLimit,
 } from "@/lib/guardrails.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -180,8 +181,14 @@ function SpendGuardrails() {
   async function addLimit() {
     const amount = Number(limitUsd);
     const pct = Number(threshold);
-    if (!Number.isFinite(amount) || amount <= 0) return toast.error("Enter a limit above $0");
-    if (!Number.isFinite(pct) || pct < 1 || pct > 100) return toast.error("Alert threshold must be 1–100%");
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Enter a limit above $0");
+      return;
+    }
+    if (!Number.isFinite(pct) || pct < 1 || pct > 100) {
+      toast.error("Alert threshold must be 1–100%");
+      return;
+    }
     setBusy(true);
     try {
       await upsert({
@@ -361,10 +368,6 @@ function RetentionPolicy() {
   const [days, setDays] = useState("30");
   const [archive, setArchive] = useState(true);
   const [busy, setBusy] = useState<"save" | "run" | null>(null);
-  const saveMutationFn = useServerFn(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    (await0 as never) ?? (undefined as never),
-  );
 
   useEffect(() => {
     if (!data?.settings) return;
@@ -372,7 +375,6 @@ function RetentionPolicy() {
     setArchive(data.settings.archive_logs);
   }, [data?.settings?.log_retention_days, data?.settings?.archive_logs]);
 
-  void saveMutationFn;
 
   return (
     <Card>
