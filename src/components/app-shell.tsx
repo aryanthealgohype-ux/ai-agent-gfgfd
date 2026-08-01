@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import {
   Bot,
   LayoutDashboard,
@@ -14,9 +14,14 @@ import {
   BookLock,
   Play,
   Webhook,
+  UserRound,
+  Bell,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getWorkspace, listApprovals } from "@/lib/fleet.functions";
+import { listApprovals } from "@/lib/fleet.functions";
+import { getSessionBootstrap, recordAuthEvent } from "@/lib/account.functions";
+import { clearSessionMarkers, getDeviceId, isSessionExpired } from "@/lib/session";
+import { ThemeToggle, useTheme } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,21 +36,24 @@ const NAV = [
   { to: "/connectors", label: "Connectors", short: "Connect", icon: Plug },
   { to: "/settings", label: "Settings", short: "Settings", icon: Settings },
   { to: "/audit", label: "Audit log", short: "Audit", icon: ScrollText },
+  { to: "/profile", label: "Your profile", short: "You", icon: UserRound },
 ] as const;
 
 // Icon-first bar for phones: the five surfaces you touch during an active shift.
-const MOBILE_NAV = ["/dashboard", "/agents", "/approvals", "/runs", "/playbook"] as const;
+const MOBILE_NAV = ["/dashboard", "/agents", "/approvals", "/runs", "/profile"] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const fetchWorkspace = useServerFn(getWorkspace);
+  const fetchSession = useServerFn(getSessionBootstrap);
   const fetchApprovals = useServerFn(listApprovals);
+  const logAuthEvent = useServerFn(recordAuthEvent);
+  useTheme();
 
   const { data: workspace } = useQuery({
-    queryKey: ["workspace"],
-    queryFn: () => fetchWorkspace(),
+    queryKey: ["session"],
+    queryFn: () => fetchSession(),
   });
 
   const { data: approvals = [] } = useQuery({
@@ -58,12 +66,31 @@ export function AppShell({ children }: { children: ReactNode }) {
     (a) => a.status === "pending",
   ).length;
 
-  async function signOut() {
+  async function signOut(reason: "manual" | "expired" = "manual") {
     await queryClient.cancelQueries();
+    if (reason === "manual") {
+      try {
+        await logAuthEvent({ data: { event: "sign_out", deviceId: getDeviceId() } });
+      } catch {
+        // Never block sign-out on bookkeeping.
+      }
+    }
     queryClient.clear();
+    clearSessionMarkers();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
+  // "Remember me" off means the session only lives for a short window.
+  useEffect(() => {
+    if (isSessionExpired()) void signOut("expired");
+    const timer = setInterval(() => {
+      if (isSessionExpired()) void signOut("expired");
+    }, 60000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   return (
     <div className="flex min-h-screen bg-muted/30">
