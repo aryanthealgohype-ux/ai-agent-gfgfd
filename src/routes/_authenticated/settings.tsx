@@ -131,7 +131,9 @@ function SettingsPage() {
       </Card>
 
       <SpendGuardrails />
+      <AlertChannels />
       <RetentionPolicy />
+
 
       <Card>
         <CardHeader>
