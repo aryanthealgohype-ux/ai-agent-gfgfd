@@ -197,7 +197,7 @@ export async function readXMentions(limit: number): Promise<SocialItem[]> {
 export async function publishSocial(
   provider: SocialProvider,
   text: string,
-  options: { imageUrl?: string; linkUrl?: string },
+  options: { imageUrl?: string | undefined; linkUrl?: string | undefined },
 ): Promise<SocialPublishResult> {
   if (provider === "facebook") return publishToFacebook(text, options.linkUrl);
   if (provider === "x") return publishToX(text);
