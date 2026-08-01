@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://hdasilwitourcnqwprqy.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "ai-agent-commander",
+      "version": "0.1.0",
+      "title": "AI Agent Commander"
+    },
+    "tools": [
+      {
+        "name": "list_agents",
+        "title": "List agents",
+        "description": "List the AI agents in the caller's workspace with category, safety rating, model and status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filter by agent status. Defaults to any.",
+              "type": "string",
+              "enum": [
+                "active",
+                "paused",
+                "any"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_agent",
+        "title": "Get agent definition",
+        "description": "Get one agent's full definition: role/system prompt, safety rating and justification, permissions, escalation rules and required connectors.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Agent slug, e.g. 'receptionist'."
+            }
+          },
+          "required": [
+            "slug"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_runs",
+        "title": "List agent runs",
+        "description": "List recent agent runs in the workspace with status, cost, tokens and timing. Optionally filter by agent slug or status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "description": "Only runs for this agent slug.",
+              "type": "string"
+            },
+            "status": {
+              "description": "Filter by run status. Defaults to any.",
+              "type": "string",
+              "enum": [
+                "queued",
+                "running",
+                "succeeded",
+                "failed",
+                "pending_approval",
+                "rejected",
+                "any"
+              ]
+            },
+            "limit": {
+              "description": "Max rows, 1-50. Defaults to 20.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_run",
+        "title": "Get run transcript",
+        "description": "Get one agent run with its full event log (timestamps, levels, messages) so failures can be diagnosed.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "run_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The agent run id (uuid)."
+            }
+          },
+          "required": [
+            "run_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_approvals",
+        "title": "List approvals",
+        "description": "List human-in-the-loop approval requests for high-safety agent runs, with requester, reason and decision state.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filter by approval status. Defaults to pending.",
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "denied",
+                "any"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "set_agent_status",
+        "title": "Activate or pause an agent",
+        "description": "Activate or pause an agent in the workspace. Requires manager-level access; paused agents cannot be run.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Agent slug to update."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "paused"
+              ],
+              "description": "New agent status."
+            }
+          },
+          "required": [
+            "slug",
+            "status"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

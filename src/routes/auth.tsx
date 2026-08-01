@@ -15,7 +15,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
+/** Only same-origin relative paths may be used as a post-login redirect. */
+function safePath(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  if (!value.startsWith("/") || value.startsWith("//")) return undefined;
+  return value;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    next: safePath(search['next']),
+  }),
   head: () => ({
     meta: [
       { title: "Sign in | AI Operating System" },
@@ -42,6 +52,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const stampLogin = useServerFn(recordLogin);
+  const { next } = Route.useSearch();
   useTheme();
 
   const [mode, setMode] = useState<Mode>("signin");
@@ -57,19 +68,24 @@ function AuthPage() {
   // A valid session must never see this page again.
   useEffect(() => {
     let cancelled = false;
+    const land = () => {
+      if (next) {
+        window.location.replace(next);
+        return;
+      }
+      navigate({ to: "/dashboard", replace: true });
+    };
     supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled && data.session) navigate({ to: "/dashboard", replace: true });
+      if (!cancelled && data.session) land();
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-        navigate({ to: "/dashboard", replace: true });
-      }
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) land();
     });
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, next]);
 
   /** Warms every dashboard dependency before we leave the login screen. */
   async function completeSignIn() {
@@ -84,6 +100,11 @@ function AuthPage() {
       // Device bookkeeping must never block a valid sign-in.
     }
     await queryClient.invalidateQueries();
+    // An OAuth/MCP consent handoff must return to the page that sent us here.
+    if (next) {
+      window.location.replace(next);
+      return;
+    }
     navigate({ to: "/dashboard", replace: true });
   }
 
@@ -106,7 +127,10 @@ function AuthPage() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin, data: { full_name: fullName } },
+          options: {
+            emailRedirectTo: next ? `${window.location.origin}${next}` : window.location.origin,
+            data: { full_name: fullName },
+          },
         });
         if (signUpError) throw signUpError;
         if (!data.session) {
@@ -135,7 +159,7 @@ function AuthPage() {
     setBusy(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: next ? `${window.location.origin}${next}` : window.location.origin,
       });
       if (result.error) {
         setError("Google sign-in failed. Please try again.");
