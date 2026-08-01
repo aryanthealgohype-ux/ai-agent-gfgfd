@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedRunsRouteImport } from './routes/_authenticated/runs'
@@ -31,6 +32,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
@@ -68,6 +74,7 @@ const AuthenticatedAgentsSlugRoute = AuthenticatedAgentsSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/runs': typeof AuthenticatedRunsRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/runs': typeof AuthenticatedRunsRoute
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/runs': typeof AuthenticatedRunsRoute
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/approvals'
+    | '/audit'
     | '/connectors'
     | '/dashboard'
     | '/runs'
@@ -112,6 +122,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/approvals'
+    | '/audit'
     | '/connectors'
     | '/dashboard'
     | '/runs'
@@ -123,6 +134,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/_authenticated/approvals'
+    | '/_authenticated/audit'
     | '/_authenticated/connectors'
     | '/_authenticated/dashboard'
     | '/_authenticated/runs'
@@ -157,6 +169,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/audit': {
+      id: '/_authenticated/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuthenticatedAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/connectors': {
@@ -206,6 +225,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedRunsRoute: typeof AuthenticatedRunsRoute
@@ -216,6 +236,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedRunsRoute: AuthenticatedRunsRoute,
