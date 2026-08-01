@@ -4,7 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import { AlertChannels } from "@/components/alert-channels";
+import { RetentionProjection } from "@/components/retention-projection";
 import { getSettings, getWorkspace, listAgents, listTeam, updatePlaceholders } from "@/lib/fleet.functions";
+
 import {
   applyRetentionNow,
   deleteSpendLimit,
