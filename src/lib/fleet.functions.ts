@@ -375,9 +375,22 @@ export const decideApproval = createServerFn({ method: "POST" })
       return { status: "rejected" as const, output: null };
     }
 
+    const { data: gatedAgent } = await supabaseAdmin
+      .from("agents")
+      .select("id, name")
+      .eq("id", approval.agent_id)
+      .maybeSingle();
+    const { enforceSpendLimits } = await import("@/lib/spend.server");
+    await enforceSpendLimits({
+      orgId: approval.org_id,
+      agentId: approval.agent_id,
+      agentName: gatedAgent?.name ?? "agent",
+    });
+
     await supabaseAdmin.from("agent_runs").update({ status: "queued" }).eq("id", approval.run_id);
     const result = await executeRun(approval.run_id);
     return { status: result.status, output: result.output ?? null };
+
   });
 
 export const listApprovals = createServerFn({ method: "GET" })
