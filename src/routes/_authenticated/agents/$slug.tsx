@@ -9,8 +9,8 @@ import {
   setAgentStatus,
   updateAgent,
   rollbackAgent,
-  getRunLogs,
 } from "@/lib/fleet.functions";
+import { LiveRunLog } from "@/components/live-run-log";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +46,6 @@ function AgentConsole() {
   const { slug } = Route.useParams();
   const queryClient = useQueryClient();
   const fetchAgent = useServerFn(getAgent);
-  const fetchLogs = useServerFn(getRunLogs);
   const run = useServerFn(runAgent);
   const toggleStatus = useServerFn(setAgentStatus);
   const save = useServerFn(updateAgent);
@@ -63,6 +62,7 @@ function AgentConsole() {
   const [requiresApproval, setRequiresApproval] = useState(true);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [activeRunStatus, setActiveRunStatus] = useState<string | null>(null);
 
   const agent = data?.agent;
 
@@ -74,17 +74,14 @@ function AgentConsole() {
     setWebhookUrl(agent.webhook_url ?? "");
   }, [agent?.id, agent?.version]);
 
-  const { data: logs = [] } = useQuery({
-    queryKey: ["run-logs", activeRunId],
-    queryFn: () => fetchLogs({ data: { runId: activeRunId! } }),
-    enabled: Boolean(activeRunId),
-    refetchInterval: 2500,
-  });
-
   const runMutation = useMutation({
-    mutationFn: () => run({ data: { agentId: agent!.id, input } }),
+    mutationFn: () => {
+      setActiveRunStatus("running");
+      return run({ data: { agentId: agent!.id, input } });
+    },
     onSuccess: (result) => {
       setActiveRunId(result.runId);
+      setActiveRunStatus(result.status);
       queryClient.invalidateQueries({ queryKey: ["agent", slug] });
       queryClient.invalidateQueries({ queryKey: ["overview"] });
       queryClient.invalidateQueries({ queryKey: ["approvals"] });
@@ -210,20 +207,7 @@ function AgentConsole() {
             </Card>
           )}
 
-          {Boolean(logs.length) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Execution log</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                {logs.map((log) => (
-                  <p key={log.id} className="font-mono text-xs text-muted-foreground">
-                    <span className="text-foreground">[{log.level}]</span> {log.message}
-                  </p>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          <LiveRunLog runId={activeRunId} status={activeRunStatus} />
         </TabsContent>
 
         <TabsContent value="config" className="space-y-4 pt-4">
