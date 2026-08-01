@@ -3,7 +3,7 @@ import {
   Bot, 
   Search, 
   Check, 
-  Plugs, 
+  Plug, 
   Settings, 
   ExternalLink,
   Lock,

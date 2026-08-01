@@ -49,7 +49,7 @@ export function SecurityPage() {
     // Add to audit logs
     setAuditLogs(prev => [
       { 
-        timestamp: new Date().toTimeString().split(' ')[0], 
+        timestamp: new Date().toTimeString().split(' ')[0] ?? "", 
         action: `Approved: ${task.action} (${task.agent})`, 
         source: "Human Approver", 
         status: "APPROVED" 
@@ -65,7 +65,7 @@ export function SecurityPage() {
     // Add to audit logs
     setAuditLogs(prev => [
       { 
-        timestamp: new Date().toTimeString().split(' ')[0], 
+        timestamp: new Date().toTimeString().split(' ')[0] ?? "", 
         action: `Rejected: ${task.action} (${task.agent})`, 
         source: "Human Approver", 
         status: "REJECTED" 

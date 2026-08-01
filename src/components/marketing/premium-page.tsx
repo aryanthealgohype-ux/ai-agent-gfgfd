@@ -824,7 +824,7 @@ export function PremiumMarketingPage({ pageKey }: { pageKey: PremiumPageKey }) {
 
           <div className="lg:col-span-8">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Tabs defaultValue={page.tabs[0]} className="w-full sm:w-auto">
+              <Tabs defaultValue={page.tabs[0] ?? ""} className="w-full sm:w-auto">
                 <TabsList className="grid w-full grid-cols-3 bg-zinc-100 sm:w-[360px]">
                   {page.tabs.map((tab) => (
                     <TabsTrigger key={tab} value={tab} className="text-xs">
