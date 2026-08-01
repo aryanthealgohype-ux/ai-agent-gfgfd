@@ -16,6 +16,8 @@ import { getSessionBootstrap } from "@/lib/account.functions";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/safety-badge";
+import { FleetActivityStream } from "@/components/fleet-activity-stream";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
