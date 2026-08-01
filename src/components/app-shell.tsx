@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import {
   Bot,
   LayoutDashboard,
@@ -14,9 +14,14 @@ import {
   BookLock,
   Play,
   Webhook,
+  UserRound,
+  Bell,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getWorkspace, listApprovals } from "@/lib/fleet.functions";
+import { listApprovals } from "@/lib/fleet.functions";
+import { getSessionBootstrap, recordAuthEvent } from "@/lib/account.functions";
+import { clearSessionMarkers, getDeviceId, isSessionExpired } from "@/lib/session";
+import { ThemeToggle, useTheme } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,21 +36,24 @@ const NAV = [
   { to: "/connectors", label: "Connectors", short: "Connect", icon: Plug },
   { to: "/settings", label: "Settings", short: "Settings", icon: Settings },
   { to: "/audit", label: "Audit log", short: "Audit", icon: ScrollText },
+  { to: "/profile", label: "Your profile", short: "You", icon: UserRound },
 ] as const;
 
 // Icon-first bar for phones: the five surfaces you touch during an active shift.
-const MOBILE_NAV = ["/dashboard", "/agents", "/approvals", "/runs", "/playbook"] as const;
+const MOBILE_NAV = ["/dashboard", "/agents", "/approvals", "/runs", "/profile"] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const fetchWorkspace = useServerFn(getWorkspace);
+  const fetchSession = useServerFn(getSessionBootstrap);
   const fetchApprovals = useServerFn(listApprovals);
+  const logAuthEvent = useServerFn(recordAuthEvent);
+  useTheme();
 
   const { data: workspace } = useQuery({
-    queryKey: ["workspace"],
-    queryFn: () => fetchWorkspace(),
+    queryKey: ["session"],
+    queryFn: () => fetchSession(),
   });
 
   const { data: approvals = [] } = useQuery({
@@ -58,12 +66,31 @@ export function AppShell({ children }: { children: ReactNode }) {
     (a) => a.status === "pending",
   ).length;
 
-  async function signOut() {
+  async function signOut(reason: "manual" | "expired" = "manual") {
     await queryClient.cancelQueries();
+    if (reason === "manual") {
+      try {
+        await logAuthEvent({ data: { event: "sign_out", deviceId: getDeviceId() } });
+      } catch {
+        // Never block sign-out on bookkeeping.
+      }
+    }
     queryClient.clear();
+    clearSessionMarkers();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
+  // "Remember me" off means the session only lives for a short window.
+  useEffect(() => {
+    if (isSessionExpired()) void signOut("expired");
+    const timer = setInterval(() => {
+      if (isSessionExpired()) void signOut("expired");
+    }, 60000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -106,23 +133,34 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="mt-6 rounded-lg border border-border p-3">
-          <p className="truncate text-sm font-medium text-foreground">
-            {workspace?.profile?.full_name ?? workspace?.profile?.email ?? "Signed in"}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">{workspace?.activeOrg?.name}</p>
-          <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-6 space-y-3 rounded-lg border border-border p-3">
+          <Link to="/profile" className="block min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {workspace?.profile?.full_name ?? workspace?.email ?? "Signed in"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{workspace?.activeOrg?.name}</p>
+          </Link>
+          <div className="flex flex-wrap gap-1">
             {(workspace?.roles ?? []).map((role) => (
               <Badge key={role} variant="secondary" className="text-[10px] uppercase">
                 {role}
               </Badge>
             ))}
           </div>
-          <Button variant="ghost" size="sm" className="mt-3 w-full justify-start" onClick={signOut}>
+          <div className="flex items-center justify-between gap-2">
+            <ThemeToggle />
+            {(workspace?.notificationCount ?? 0) > 0 && (
+              <Badge variant="outline" className="gap-1">
+                <Bell className="size-3" /> {workspace?.notificationCount}
+              </Badge>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => void signOut("manual")}>
             <LogOut className="size-4" /> Sign out
           </Button>
         </div>
       </aside>
+
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar: identity + sign out only, navigation lives at the bottom. */}
@@ -136,11 +174,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {workspace?.activeOrg?.name ?? "AI Operating System"}
               </span>
               <span className="block truncate text-[11px] text-muted-foreground">
-                {workspace?.profile?.full_name ?? workspace?.profile?.email ?? "Signed in"}
+                {workspace?.profile?.full_name ?? workspace?.email ?? "Signed in"}
               </span>
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-1">
+            <ThemeToggle className="mr-1" />
             <Link
               to="/connectors"
               aria-label="Connectors"
@@ -148,6 +187,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <Plug className="size-4" />
             </Link>
+
             <Link
               to="/settings"
               aria-label="Settings"
@@ -158,7 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               aria-label="Sign out"
-              onClick={signOut}
+              onClick={() => void signOut("manual")}
               className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent"
             >
               <LogOut className="size-4" />
