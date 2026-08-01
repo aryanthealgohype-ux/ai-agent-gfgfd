@@ -69,10 +69,26 @@ export async function executeRun(runId: string) {
 
   const { data: agent, error: agentError } = await supabaseAdmin
     .from("agents")
-    .select("id, name, slug, system_prompt, model, status, safety_rating")
+    .select("id, name, slug, system_prompt, model, status, safety_rating, webhook_url")
     .eq("id", run.agent_id)
     .single();
   if (agentError || !agent) throw new Error("Agent not found");
+
+  /** Queues the n8n callback (if configured) and tries it once immediately. */
+  async function dispatchWebhook(event: string, payload: Record<string, unknown>) {
+    if (!agent?.webhook_url) return;
+    const { enqueueWebhook, attemptDelivery } = await import("./webhooks.server");
+    const deliveryId = await enqueueWebhook({
+      orgId: run!.org_id,
+      agentId: agent.id,
+      runId: runId,
+      url: agent.webhook_url,
+      event,
+      payload,
+    });
+    if (deliveryId) await attemptDelivery(deliveryId);
+  }
+
 
   const { data: settings } = await supabaseAdmin
     .from("org_settings")
