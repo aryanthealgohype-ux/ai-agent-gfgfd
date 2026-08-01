@@ -64,6 +64,10 @@ function RunsPage() {
         </p>
       </header>
 
+      <FleetActivityStream />
+
+
+
       {Boolean(spendByAgent.length) && (
         <Card>
           <CardHeader>
