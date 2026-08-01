@@ -140,12 +140,18 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT" && session) queryClient.invalidateQueries();
-    });
-    return () => sub.subscription.unsubscribe();
+    // The public site must render even if backend env vars are unavailable.
+    try {
+      const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        router.invalidate();
+        if (event !== "SIGNED_OUT" && session) queryClient.invalidateQueries();
+      });
+      return () => sub.subscription.unsubscribe();
+    } catch (err) {
+      console.error("[auth] Skipping auth state subscription:", err);
+      return;
+    }
   }, [router, queryClient]);
 
   return (
