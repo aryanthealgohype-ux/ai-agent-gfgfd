@@ -89,7 +89,7 @@ export const getSessionBootstrap = createServerFn({ method: "GET" })
 /** Called right after a successful sign-in: stamps last login + device row. */
 export const recordLogin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => deviceInput.parse(input))
+  .validator((input: unknown) => deviceInput.parse(input))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase.rpc("record_login", {
       _device_id: data.deviceId,
@@ -103,7 +103,7 @@ export const recordLogin = createServerFn({ method: "POST" })
 
 export const recordAuthEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         event: z.enum(["sign_out", "sign_out_all", "password_change", "profile_update"]),
@@ -124,7 +124,7 @@ export const recordAuthEvent = createServerFn({ method: "POST" })
 
 export const updateProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         fullName: z.string().trim().min(1).max(120),
@@ -181,7 +181,7 @@ export const listDevices = createServerFn({ method: "GET" })
 
 export const revokeDevice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("user_devices")

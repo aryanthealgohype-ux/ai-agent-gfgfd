@@ -59,7 +59,7 @@ export const listAgents = createServerFn({ method: "GET" })
 
 export const getAgent = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ slug: z.string().min(1) }).parse(input))
+  .validator((input: unknown) => z.object({ slug: z.string().min(1) }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: agent, error } = await context.supabase
       .from("agents")
@@ -92,7 +92,7 @@ export const getAgent = createServerFn({ method: "GET" })
 
 export const setAgentStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ agentId: uuid, status: z.enum(["active", "paused"]) }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -118,7 +118,7 @@ export const setAgentStatus = createServerFn({ method: "POST" })
 
 export const updateAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         agentId: uuid,
@@ -183,7 +183,7 @@ export const updateAgent = createServerFn({ method: "POST" })
 
 export const rollbackAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ versionId: uuid }).parse(input))
+  .validator((input: unknown) => z.object({ versionId: uuid }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: version, error } = await context.supabase
       .from("agent_versions")
@@ -243,7 +243,7 @@ export const rollbackAgent = createServerFn({ method: "POST" })
  */
 export const runAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ agentId: uuid, input: z.string().min(1).max(20000) }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -318,7 +318,7 @@ export const runAgent = createServerFn({ method: "POST" })
 
 export const decideApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ approvalId: uuid, approve: z.boolean(), reason: z.string().max(500).optional() })
       .parse(input),
@@ -423,7 +423,7 @@ export const listRuns = createServerFn({ method: "GET" })
 
 export const getRunLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ runId: uuid }).parse(input))
+  .validator((input: unknown) => z.object({ runId: uuid }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: logs, error } = await context.supabase
       .from("run_logs")
@@ -441,7 +441,7 @@ export const getRunLogs = createServerFn({ method: "GET" })
  */
 export const getFleetActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ limit: z.number().int().min(20).max(400).default(150) })
       .partial()
@@ -485,7 +485,7 @@ export const getFleetActivity = createServerFn({ method: "GET" })
 /** Labels for runs that appeared in the live stream after the initial seed. */
 export const getRunLabels = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ runIds: z.array(uuid).min(1).max(50) }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -512,7 +512,7 @@ export const listConnectors = createServerFn({ method: "GET" })
 
 export const setConnectorState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ connectorId: uuid, connected: z.boolean(), accountRef: z.string().max(200).optional() })
       .parse(input),
@@ -581,7 +581,7 @@ export const getSettings = createServerFn({ method: "GET" })
 
 export const updatePlaceholders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ placeholders: z.record(z.string(), z.string().max(500)) }).parse(input),
   )
   .handler(async ({ context, data }) => {

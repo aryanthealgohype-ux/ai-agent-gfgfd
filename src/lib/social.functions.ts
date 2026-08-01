@@ -46,7 +46,7 @@ export const getSocialStatus = createServerFn({ method: "GET" })
 /** Read recent posts / mentions so agents (and humans) can use them as input. */
 export const readSocialInbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ provider: providerSchema, limit: z.number().int().min(1).max(50).default(10) }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -64,7 +64,7 @@ export const readSocialInbox = createServerFn({ method: "POST" })
 /** Publish an agent output to a social channel. Manager/admin only, always audited. */
 export const publishSocialPost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         provider: providerSchema,

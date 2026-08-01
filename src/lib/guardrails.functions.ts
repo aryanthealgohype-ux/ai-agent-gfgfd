@@ -41,7 +41,7 @@ export const getSpendGuardrails = createServerFn({ method: "GET" })
 
 export const upsertSpendLimit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: uuid.optional(),
@@ -89,7 +89,7 @@ export const upsertSpendLimit = createServerFn({ method: "POST" })
 
 export const deleteSpendLimit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: uuid }).parse(input))
+  .validator((input: unknown) => z.object({ id: uuid }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: removed, error } = await context.supabase
       .from("spend_limits")
@@ -129,7 +129,7 @@ export const listDeliveries = createServerFn({ method: "GET" })
 
 export const retryDelivery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: uuid, reset: z.boolean().optional() }).parse(input))
+  .validator((input: unknown) => z.object({ id: uuid, reset: z.boolean().optional() }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: delivery, error } = await context.supabase
       .from("webhook_deliveries")
@@ -235,7 +235,7 @@ export const listAlertChannels = createServerFn({ method: "GET" })
 
 export const saveAlertChannel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: uuid.optional(),
@@ -301,7 +301,7 @@ export const saveAlertChannel = createServerFn({ method: "POST" })
 
 export const deleteAlertChannel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: uuid }).parse(input))
+  .validator((input: unknown) => z.object({ id: uuid }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: removed, error } = await context.supabase
       .from("alert_channels")
@@ -316,7 +316,7 @@ export const deleteAlertChannel = createServerFn({ method: "POST" })
 
 export const testAlertChannel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: uuid }).parse(input))
+  .validator((input: unknown) => z.object({ id: uuid }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: channel, error } = await context.supabase
       .from("alert_channels")
@@ -389,7 +389,7 @@ export type RetentionPreview = {
  */
 export const getRetentionPreview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ days: z.number().int().min(1).max(3650).optional() }).parse(input ?? {}),
   )
   .handler(async ({ context, data }) => {
@@ -430,7 +430,7 @@ export const getRetentionPreview = createServerFn({ method: "GET" })
 
 export const updateRetentionPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ retentionDays: z.number().int().min(1).max(3650), archiveLogs: z.boolean() })
       .parse(input),
@@ -524,7 +524,7 @@ export const applyRetentionNow = createServerFn({ method: "POST" })
 
 export const getRunTranscript = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ runId: uuid }).parse(input))
+  .validator((input: unknown) => z.object({ runId: uuid }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: run, error } = await context.supabase
       .from("agent_runs")
