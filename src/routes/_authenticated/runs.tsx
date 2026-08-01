@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/safety-badge";
 import { TranscriptExport } from "@/components/run-transcript-export";
+import { FleetActivityStream } from "@/components/fleet-activity-stream";
+
 
 export const Route = createFileRoute("/_authenticated/runs")({
   head: () => ({
@@ -63,6 +65,10 @@ function RunsPage() {
           Full execution trail with tokens, latency and cost per run.
         </p>
       </header>
+
+      <FleetActivityStream />
+
+
 
       {Boolean(spendByAgent.length) && (
         <Card>
