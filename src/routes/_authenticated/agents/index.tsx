@@ -51,7 +51,7 @@ function AgentsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agent fleet</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Agent fleet</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {agents.length} specialised agents. High-risk agents are approval-gated and cannot be run
           without a human decision.

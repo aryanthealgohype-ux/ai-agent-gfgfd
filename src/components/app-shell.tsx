@@ -11,33 +11,50 @@ import {
   Settings,
   ScrollText,
   LogOut,
+  BookLock,
+  Play,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getWorkspace } from "@/lib/fleet.functions";
+import { getWorkspace, listApprovals } from "@/lib/fleet.functions";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/agents", label: "Agent fleet", icon: Bot },
-  { to: "/approvals", label: "Approvals", icon: ShieldCheck },
-  { to: "/runs", label: "Run history", icon: Activity },
-  { to: "/connectors", label: "Connectors", icon: Plug },
-  { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/audit", label: "Audit log", icon: ScrollText },
+  { to: "/dashboard", label: "Dashboard", short: "Home", icon: LayoutDashboard },
+  { to: "/agents", label: "Agent fleet", short: "Agents", icon: Bot },
+  { to: "/approvals", label: "Approvals", short: "Approve", icon: ShieldCheck },
+  { to: "/runs", label: "Run history", short: "Runs", icon: Activity },
+  { to: "/playbook", label: "Safety playbook", short: "Prompts", icon: BookLock },
+  { to: "/connectors", label: "Connectors", short: "Connect", icon: Plug },
+  { to: "/settings", label: "Settings", short: "Settings", icon: Settings },
+  { to: "/audit", label: "Audit log", short: "Audit", icon: ScrollText },
 ] as const;
+
+// Icon-first bar for phones: the five surfaces you touch during an active shift.
+const MOBILE_NAV = ["/dashboard", "/agents", "/approvals", "/runs", "/playbook"] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const fetchWorkspace = useServerFn(getWorkspace);
+  const fetchApprovals = useServerFn(listApprovals);
 
   const { data: workspace } = useQuery({
     queryKey: ["workspace"],
     queryFn: () => fetchWorkspace(),
   });
+
+  const { data: approvals = [] } = useQuery({
+    queryKey: ["approvals"],
+    queryFn: () => fetchApprovals(),
+    refetchInterval: 30000,
+  });
+
+  const pendingCount = (approvals as Array<{ status: string }>).filter(
+    (a) => a.status === "pending",
+  ).length;
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -49,13 +66,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-muted/30">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card px-4 py-6 lg:flex">
-        <Link to="/dashboard" className="mb-8 flex items-center gap-2 px-2">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+        <Link to="/dashboard" className="mb-8 flex min-w-0 items-center gap-2 px-2">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Bot className="size-5" />
           </span>
-          <span className="leading-tight">
-            <span className="block text-sm font-semibold text-foreground">AI Operating System</span>
-            <span className="block text-xs text-muted-foreground">Fleet command center</span>
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate text-sm font-semibold text-foreground">
+              AI Operating System
+            </span>
+            <span className="block truncate text-xs text-muted-foreground">
+              Fleet command center
+            </span>
           </span>
         </Link>
 
@@ -73,8 +94,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
-                <item.icon className="size-4" />
-                {item.label}
+                <item.icon className="size-4 shrink-0" />
+                <span className="min-w-0 truncate">{item.label}</span>
+                {item.to === "/approvals" && pendingCount > 0 && (
+                  <Badge className="ml-auto shrink-0">{pendingCount}</Badge>
+                )}
               </Link>
             );
           })}
@@ -99,24 +123,86 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 overflow-x-auto border-b border-border bg-card px-4 py-2 lg:hidden">
-          {NAV.map((item) => (
+        {/* Mobile top bar: identity + sign out only, navigation lives at the bottom. */}
+        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-card px-4 py-2.5 lg:hidden">
+          <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Bot className="size-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-foreground">
+                {workspace?.activeOrg?.name ?? "AI Operating System"}
+              </span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {workspace?.profile?.full_name ?? workspace?.profile?.email ?? "Signed in"}
+              </span>
+            </span>
+          </Link>
+          <div className="flex shrink-0 items-center gap-1">
+            <Link
+              to="/connectors"
+              aria-label="Connectors"
+              className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent"
+            >
+              <Plug className="size-4" />
+            </Link>
+            <Link
+              to="/settings"
+              aria-label="Settings"
+              className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent"
+            >
+              <Settings className="size-4" />
+            </Link>
+            <button
+              type="button"
+              aria-label="Sign out"
+              onClick={signOut}
+              className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </div>
+        </header>
+
+        <main className="min-w-0 flex-1 px-4 pb-28 pt-5 sm:px-8 sm:pb-10 sm:pt-6">{children}</main>
+      </div>
+
+      {/* Fixed primary action: jump straight to launching a run. */}
+      <Link
+        to="/agents"
+        aria-label="Run an agent"
+        className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95 lg:bottom-6 lg:right-6"
+      >
+        <Play className="size-4" />
+        <span className="hidden sm:inline">Run agent</span>
+      </Link>
+
+      {/* Icon-based bottom navigation (mobile). */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card/95 backdrop-blur lg:hidden">
+        {MOBILE_NAV.map((to) => {
+          const item = NAV.find((n) => n.to === to)!;
+          const active = pathname.startsWith(item.to);
+          return (
             <Link
               key={item.to}
               to={item.to}
+              aria-label={item.label}
               className={cn(
-                "whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium",
-                pathname.startsWith(item.to)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground",
+                "relative flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium",
+                active ? "text-primary" : "text-muted-foreground",
               )}
             >
-              {item.label}
+              <item.icon className="size-5" />
+              {item.short}
+              {item.to === "/approvals" && pendingCount > 0 && (
+                <span className="absolute right-4 top-1.5 grid size-4 place-items-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                  {pendingCount}
+                </span>
+              )}
             </Link>
-          ))}
-        </header>
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-8">{children}</main>
-      </div>
+          );
+        })}
+      </nav>
     </div>
   );
 }

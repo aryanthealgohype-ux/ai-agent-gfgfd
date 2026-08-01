@@ -9,8 +9,8 @@ import {
   setAgentStatus,
   updateAgent,
   rollbackAgent,
-  getRunLogs,
 } from "@/lib/fleet.functions";
+import { LiveRunLog } from "@/components/live-run-log";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +46,6 @@ function AgentConsole() {
   const { slug } = Route.useParams();
   const queryClient = useQueryClient();
   const fetchAgent = useServerFn(getAgent);
-  const fetchLogs = useServerFn(getRunLogs);
   const run = useServerFn(runAgent);
   const toggleStatus = useServerFn(setAgentStatus);
   const save = useServerFn(updateAgent);
@@ -63,6 +62,7 @@ function AgentConsole() {
   const [requiresApproval, setRequiresApproval] = useState(true);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [activeRunStatus, setActiveRunStatus] = useState<string | null>(null);
 
   const agent = data?.agent;
 
@@ -74,17 +74,14 @@ function AgentConsole() {
     setWebhookUrl(agent.webhook_url ?? "");
   }, [agent?.id, agent?.version]);
 
-  const { data: logs = [] } = useQuery({
-    queryKey: ["run-logs", activeRunId],
-    queryFn: () => fetchLogs({ data: { runId: activeRunId! } }),
-    enabled: Boolean(activeRunId),
-    refetchInterval: 2500,
-  });
-
   const runMutation = useMutation({
-    mutationFn: () => run({ data: { agentId: agent!.id, input } }),
+    mutationFn: () => {
+      setActiveRunStatus("running");
+      return run({ data: { agentId: agent!.id, input } });
+    },
     onSuccess: (result) => {
       setActiveRunId(result.runId);
+      setActiveRunStatus(result.status);
       queryClient.invalidateQueries({ queryKey: ["agent", slug] });
       queryClient.invalidateQueries({ queryKey: ["overview"] });
       queryClient.invalidateQueries({ queryKey: ["approvals"] });
@@ -133,9 +130,10 @@ function AgentConsole() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{agent.name}</h1>
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+
+          <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{agent.name}</h1>
           <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
             {agent.category} · v{agent.version}
           </p>
@@ -164,12 +162,13 @@ function AgentConsole() {
       </header>
 
       <Tabs defaultValue="run">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="run">Run</TabsTrigger>
-          <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="config">Config</TabsTrigger>
           <TabsTrigger value="safety">Safety</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="run" className="space-y-4 pt-4">
           <Card>
@@ -210,20 +209,7 @@ function AgentConsole() {
             </Card>
           )}
 
-          {Boolean(logs.length) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Execution log</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                {logs.map((log) => (
-                  <p key={log.id} className="font-mono text-xs text-muted-foreground">
-                    <span className="text-foreground">[{log.level}]</span> {log.message}
-                  </p>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          <LiveRunLog runId={activeRunId} status={activeRunStatus} />
         </TabsContent>
 
         <TabsContent value="config" className="space-y-4 pt-4">
