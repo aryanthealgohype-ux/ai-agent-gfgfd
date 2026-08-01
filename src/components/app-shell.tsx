@@ -13,6 +13,7 @@ import {
   LogOut,
   BookLock,
   Play,
+  Webhook,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getWorkspace, listApprovals } from "@/lib/fleet.functions";
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/approvals", label: "Approvals", short: "Approve", icon: ShieldCheck },
   { to: "/runs", label: "Run history", short: "Runs", icon: Activity },
   { to: "/playbook", label: "Safety playbook", short: "Prompts", icon: BookLock },
+  { to: "/deliveries", label: "Deliveries", short: "Hooks", icon: Webhook },
   { to: "/connectors", label: "Connectors", short: "Connect", icon: Plug },
   { to: "/settings", label: "Settings", short: "Settings", icon: Settings },
   { to: "/audit", label: "Audit log", short: "Audit", icon: ScrollText },
