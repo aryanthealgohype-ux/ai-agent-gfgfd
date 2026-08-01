@@ -93,9 +93,9 @@ export const recordLogin = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase.rpc("record_login", {
       _device_id: data.deviceId,
-      _label: data.label ?? null,
-      _user_agent: data.userAgent ?? null,
-      _platform: data.platform ?? null,
+      _label: data.label ?? "",
+      _user_agent: data.userAgent ?? "",
+      _platform: data.platform ?? "",
     });
     if (error) throw new Error(error.message);
     return { ok: true };
