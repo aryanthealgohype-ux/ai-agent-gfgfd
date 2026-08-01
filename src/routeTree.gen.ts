@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenticated/agents/index'
+import { Route as AuthenticatedAgentsSlugRouteImport } from './routes/_authenticated/agents/$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,15 +35,22 @@ const AuthenticatedAgentsIndexRoute =
     path: '/agents/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAgentsSlugRoute = AuthenticatedAgentsSlugRouteImport.update({
+  id: '/agents/$slug',
+  path: '/agents/$slug',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/agents/$slug': typeof AuthenticatedAgentsSlugRoute
   '/agents/': typeof AuthenticatedAgentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/agents/$slug': typeof AuthenticatedAgentsSlugRoute
   '/agents': typeof AuthenticatedAgentsIndexRoute
 }
 export interface FileRoutesById {
@@ -50,18 +58,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/agents/$slug': typeof AuthenticatedAgentsSlugRoute
   '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/agents/'
+  fullPaths: '/' | '/dashboard' | '/agents/$slug' | '/agents/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/agents'
+  to: '/' | '/dashboard' | '/agents/$slug' | '/agents'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/_authenticated/dashboard'
+    | '/_authenticated/agents/$slug'
     | '/_authenticated/agents/'
   fileRoutesById: FileRoutesById
 }
@@ -100,16 +110,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/agents/$slug': {
+      id: '/_authenticated/agents/$slug'
+      path: '/agents/$slug'
+      fullPath: '/agents/$slug'
+      preLoaderRoute: typeof AuthenticatedAgentsSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedAgentsSlugRoute: typeof AuthenticatedAgentsSlugRoute
   AuthenticatedAgentsIndexRoute: typeof AuthenticatedAgentsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedAgentsSlugRoute: AuthenticatedAgentsSlugRoute,
   AuthenticatedAgentsIndexRoute: AuthenticatedAgentsIndexRoute,
 }
 
