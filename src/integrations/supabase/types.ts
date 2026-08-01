@@ -307,6 +307,59 @@ export type Database = {
           },
         ]
       }
+      alert_channels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          events: string[]
+          id: string
+          kind: Database["public"]["Enums"]["alert_channel_kind"]
+          label: string | null
+          last_error: string | null
+          last_sent_at: string | null
+          org_id: string
+          target: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          events?: string[]
+          id?: string
+          kind: Database["public"]["Enums"]["alert_channel_kind"]
+          label?: string | null
+          last_error?: string | null
+          last_sent_at?: string | null
+          org_id: string
+          target?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          events?: string[]
+          id?: string
+          kind?: Database["public"]["Enums"]["alert_channel_kind"]
+          label?: string | null
+          last_error?: string | null
+          last_sent_at?: string | null
+          org_id?: string
+          target?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_channels_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approvals: {
         Row: {
           agent_id: string
@@ -529,6 +582,7 @@ export type Database = {
       org_settings: {
         Row: {
           archive_logs: boolean
+          last_archive_run_at: string | null
           last_retention_run_at: string | null
           log_retention_days: number
           org_id: string
@@ -537,6 +591,7 @@ export type Database = {
         }
         Insert: {
           archive_logs?: boolean
+          last_archive_run_at?: string | null
           last_retention_run_at?: string | null
           log_retention_days?: number
           org_id: string
@@ -545,6 +600,7 @@ export type Database = {
         }
         Update: {
           archive_logs?: boolean
+          last_archive_run_at?: string | null
           last_retention_run_at?: string | null
           log_retention_days?: number
           org_id?: string
@@ -850,12 +906,17 @@ export type Database = {
           delivered_at: string | null
           event: string
           id: string
+          idempotency_key: string | null
           last_error: string | null
+          last_replayed_at: string | null
           last_status_code: number | null
           max_attempts: number
           next_attempt_at: string
           org_id: string
           payload: Json
+          payload_hash: string | null
+          replay_count: number
+          replay_of: string | null
           run_id: string | null
           status: string
           updated_at: string
@@ -868,12 +929,17 @@ export type Database = {
           delivered_at?: string | null
           event?: string
           id?: string
+          idempotency_key?: string | null
           last_error?: string | null
+          last_replayed_at?: string | null
           last_status_code?: number | null
           max_attempts?: number
           next_attempt_at?: string
           org_id: string
           payload?: Json
+          payload_hash?: string | null
+          replay_count?: number
+          replay_of?: string | null
           run_id?: string | null
           status?: string
           updated_at?: string
@@ -886,12 +952,17 @@ export type Database = {
           delivered_at?: string | null
           event?: string
           id?: string
+          idempotency_key?: string | null
           last_error?: string | null
+          last_replayed_at?: string | null
           last_status_code?: number | null
           max_attempts?: number
           next_attempt_at?: string
           org_id?: string
           payload?: Json
+          payload_hash?: string | null
+          replay_count?: number
+          replay_of?: string | null
           run_id?: string | null
           status?: string
           updated_at?: string
@@ -910,6 +981,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_replay_of_fkey"
+            columns: ["replay_of"]
+            isOneToOne: false
+            referencedRelation: "webhook_deliveries"
             referencedColumns: ["id"]
           },
           {
@@ -937,6 +1015,10 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
+      retention_preview: {
+        Args: { _days?: number; _org_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       agent_category:
@@ -948,6 +1030,7 @@ export type Database = {
         | "dev"
         | "security"
       agent_status: "active" | "paused"
+      alert_channel_kind: "in_app" | "email" | "slack"
       app_role: "admin" | "manager" | "employee" | "client"
       approval_status: "pending" | "approved" | "denied"
       run_status:
@@ -1095,6 +1178,7 @@ export const Constants = {
         "security",
       ],
       agent_status: ["active", "paused"],
+      alert_channel_kind: ["in_app", "email", "slack"],
       app_role: ["admin", "manager", "employee", "client"],
       approval_status: ["pending", "approved", "denied"],
       run_status: [
